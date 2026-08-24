@@ -28,4 +28,57 @@
             ON c.user_id = u.id
         WHERE c.login_id = #{loginId}
     </select>
+
+    <resultMap id="OAuthAuthenticatedUserResultMap"
+               type="com.acorn.gymmanagement.auth.model.OAuthAuthenticatedUser">
+        <constructor>
+            <idArg name="userId"
+                   column="user_id"
+                   javaType="java.lang.Long"/>
+            <arg name="email"
+                 column="email"
+                 javaType="java.lang.String"/>
+            <arg name="role"
+                 column="role"
+                 javaType="java.lang.String"/>
+            <arg name="status"
+                 column="status"
+                 javaType="java.lang.String"/>
+            <arg name="memberId"
+                 column="member_id"
+                 javaType="java.lang.Long"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findOAuthUser"
+            resultMap="OAuthAuthenticatedUserResultMap">
+        SELECT
+        u.id AS user_id,
+        u.email,
+        u.role,
+        u.status,
+        m.id AS member_id
+        FROM user_oauth_accounts oa
+        JOIN users u
+        ON u.id = oa.user_id
+        LEFT JOIN members m
+        ON m.user_id = u.id
+        WHERE oa.provider = #{provider}
+        AND oa.provider_subject = #{providerSubject}
+    </select>
+
+    <select id="existsUserByEmail"
+            resultType="boolean">
+        SELECT EXISTS(
+        SELECT 1
+        FROM users
+        WHERE email = #{email}
+        )
+    </select>
+
+    <update id="updateLastLoginAt">
+        UPDATE users
+        SET last_login_at = CURRENT_TIMESTAMP
+        WHERE id = #{userId}
+    </update>
 </mapper>

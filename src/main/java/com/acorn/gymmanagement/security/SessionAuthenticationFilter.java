@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,9 +26,7 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException{
 
-        if(SecurityContextHolder.getContext().getAuthentication() == null){
-            authenticateFromSession(request);
-        }
+        authenticateFromSession(request);
 
         filterChain.doFilter(request, response);
     }
@@ -46,6 +45,19 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
         }
         if(!sessionUser.hasValidRole()){
             session.removeAttribute(SessionUser.SESSION_KEY);
+            return;
+        }
+
+        Authentication currentAuthentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        Object currentPrincipal = currentAuthentication == null
+                ? null
+                : currentAuthentication.getPrincipal();
+
+        if(sessionUser.equals(currentPrincipal)){
             return;
         }
 

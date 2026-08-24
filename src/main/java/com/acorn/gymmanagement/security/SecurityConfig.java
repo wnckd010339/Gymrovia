@@ -1,5 +1,7 @@
 package com.acorn.gymmanagement.security;
 
+import com.acorn.gymmanagement.auth.handler.GoogleOAuthFailureHandler;
+import com.acorn.gymmanagement.auth.handler.GoogleOAuthSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +19,8 @@ public class SecurityConfig {
     private final SessionAuthenticationFilter sessionAuthenticationFilter;
     private final SessionAuthenticationEntryPoint authenticationEntryPoint;
     private final SessionAccessDeniedHandler accessDeniedHandler;
+    private final GoogleOAuthSuccessHandler googleOAuthSuccessHandler;
+    private final GoogleOAuthFailureHandler googleOAuthFailureHandler;
 
     @Bean
     SecurityFilterChain securityFilterChain(
@@ -27,6 +31,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/login",
                                 "/signup",
+                                "/signup/google/profile",
+                                "/oauth2/**",
+                                "/login/oauth2/**",
                                 "/error",
                                 "/error/**",
                                 "/favicon.ico",
@@ -84,6 +91,11 @@ public class SecurityConfig {
                 .addFilterBefore(
                         sessionAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/login")
+                        .successHandler(googleOAuthSuccessHandler)
+                        .failureHandler(googleOAuthFailureHandler)
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
