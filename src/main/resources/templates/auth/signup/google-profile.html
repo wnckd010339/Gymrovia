@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="FitFlow Google 회원 추가정보">
+    <title>Google 회원가입 | FitFlow</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/foundation/base.css}"
+          href="/css/foundation/base.css">
+
+    <link rel="stylesheet"
+          th:href="@{/css/pages/auth/login.css}"
+          href="/css/pages/auth/login.css">
+
+    <link rel="stylesheet"
+          th:href="@{/css/pages/auth/signup.css}"
+          href="/css/pages/auth/signup.css">
+
+</head>
+<body class="login-page signup-page">
+<main class="signup-layout">
+
+    <section class="signup-brand">
+        <a class="brand"
+           th:href="@{/login}"
+           href="/login"
+           aria-label="FitFlow 로그인 홈">
+            <span class="brand-mark" aria-hidden="true">F</span>
+            <span class="brand-name">FitFlow</span>
+        </a>
+
+        <div>
+            <p class="brand-eyebrow">GOOGLE SIGN UP</p>
+
+            <h1>
+                Google 인증을 완료하고<br>
+                <strong>FitFlow를 시작하세요.</strong>
+            </h1>
+
+            <p>
+                센터 이용에 필요한 추가정보만 입력하면
+                회원가입이 완료됩니다.
+            </p>
+        </div>
+
+        <small>
+            Google 비밀번호는 FitFlow에 저장되지 않습니다.
+        </small>
+    </section>
+
+    <section class="signup-panel">
+        <div class="signup-card">
+
+            <header class="auth-header">
+                <p class="auth-eyebrow">GOOGLE ACCOUNT</p>
+                <h2>추가정보 입력</h2>
+                <p>센터 이용에 필요한 정보를 입력해 주세요.</p>
+            </header>
+
+            <!-- Google 인증 이메일 표시 -->
+            <div class="form-alert">
+                Google 인증 이메일:
+                <strong th:text="${googleEmail}">
+                    member@example.com
+                </strong>
+            </div>
+
+            <!-- 가입 처리 오류 표시 -->
+            <div class="form-alert form-alert--error"
+                 th:if="${errorMessage}"
+                 role="alert">
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <form class="signup-form"
+                  th:action="@{/signup/google/profile}"
+                  th:object="${googleSignupForm}"
+                  method="post">
+
+                <div class="signup-grid">
+                    <div class="form-field">
+                        <label for="name">이름</label>
+                        <input id="name"
+                                th:field="*{name}"
+                                autocomplete="name"
+                                placeholder="이름을 입력해 주세요">
+                        <p class="field-error"
+                           th:errors="*{name}"></p>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="phone">연락처</label>
+                        <input id="phone"
+                               type="tel"
+                               th:field="*{phone}"
+                               inputmode="tel"
+                               autocomplete="tel"
+                               placeholder="010-0000-0000">
+                        <p class="field-error"
+                           th:errors="*{phone}"></p>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="birthDate">생년월일</label>
+                        <input id="birthDate"
+                               type="date"
+                               th:field="*{birthDate}"
+                               autocomplete="bday">
+                        <p class="field-error"
+                           th:errors="*{birthDate}"></p>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="gender">성별</label>
+                        <select id="gender"
+                                th:field="*{gender}">
+                            <option value="">선택해 주세요</option>
+                            <option value="MALE">남성</option>
+                            <option value="FEMALE">여성</option>
+                        </select>
+                        <p class="field-error"
+                           th:errors="*{gender}"></p>
+                    </div>
+                </div>
+
+                <label class="trainer-request">
+                    <input type="checkbox"
+                           th:field="*{trainerRequested}">
+
+                    <span>
+                        <strong>담당 트레이너 배정을 희망합니다.</strong>
+                        <small>가입 후 센터에서 상담하여 배정합니다.</small>
+                    </span>
+                </label>
+
+                <label class="trainer-request">
+                    <input type="checkbox"
+                           th:field="*{termsAgreed}">
+
+                    <span>
+                        <strong>필수 약관에 동의합니다.</strong>
+                        <small>서비스 이용을 위해 필수 동의가 필요합니다.</small>
+                    </span>
+
+                </label>
+
+                <p class="field-error"
+                    th:errors="*{termsAgreed}"></p>
+
+                <button class="button button--primary"
+                        type="submit">
+                    가입 완료
+                </button>
+            </form>
+        </div>
+    </section>
+</main>
+</body>
+</html>

@@ -1,5 +1,6 @@
 package com.acorn.gymmanagement.auth.mapper;
 
+import com.acorn.gymmanagement.auth.model.GoogleMemberRegistration;
 import com.acorn.gymmanagement.auth.model.LocalAuthenticatedUser;
 import com.acorn.gymmanagement.auth.model.OAuthAuthenticatedUser;
 import org.apache.ibatis.annotations.Mapper;
@@ -24,4 +25,10 @@ public interface AuthMapper {
     int updateLastLoginAt(
             @Param("userId") Long userId
     );
+
+    int insertGoogleUser(GoogleMemberRegistration registration);
+
+    int insertGoogleOAuthAccount(GoogleMemberRegistration registration);
+
+    int insertGoogleMember(GoogleMemberRegistration registration);
 }

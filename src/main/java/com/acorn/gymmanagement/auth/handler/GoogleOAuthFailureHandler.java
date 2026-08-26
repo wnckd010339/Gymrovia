@@ -1,5 +1,6 @@
 package com.acorn.gymmanagement.auth.handler;
 
+import com.acorn.gymmanagement.auth.model.PendingGoogleSignup;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,6 +22,12 @@ public class GoogleOAuthFailureHandler
             AuthenticationException exception
 
     ) throws IOException, ServletException {
+        if (request.getSession(false) != null) {
+            request.getSession(false).removeAttribute(
+                    PendingGoogleSignup.SESSION_KEY
+            );
+        }
+
         response.sendRedirect("/login?oauthError=failed");
     }
 

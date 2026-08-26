@@ -81,4 +81,64 @@
         SET last_login_at = CURRENT_TIMESTAMP
         WHERE id = #{userId}
     </update>
+
+    <insert id="insertGoogleUser"
+            parameterType="com.acorn.gymmanagement.auth.model.GoogleMemberRegistration"
+            useGeneratedKeys="true"
+            keyProperty="userId"
+            keyColumn="id">
+        INSERT INTO users (
+            email,
+            role,
+            status
+        )
+        VALUES (
+            #{email},
+            'MEMBER',
+            'ACTIVE'
+        )
+    </insert>
+
+    <insert id="insertGoogleOAuthAccount"
+            parameterType="com.acorn.gymmanagement.auth.model.GoogleMemberRegistration">
+        INSERT INTO user_oauth_accounts (
+            user_id,
+            provider,
+            provider_subject,
+            provider_email
+        )
+        VALUES (
+            #{userId},
+            #{provider},
+            #{providerSubject},
+            #{email}
+        )
+    </insert>
+
+    <insert id="insertGoogleMember"
+            parameterType="com.acorn.gymmanagement.auth.model.GoogleMemberRegistration"
+            useGeneratedKeys="true"
+            keyProperty="memberId"
+            keyColumn="id">
+        INSERT INTO members (
+            user_id,
+            name,
+            phone,
+            birth_date,
+            gender,
+            trainer_requested,
+            joined_at,
+            status
+        )
+        VALUES (
+            #{userId},
+            #{name},
+            #{phone},
+            #{birthDate},
+            #{gender},
+            #{trainerRequested},
+            CURRENT_DATE,
+            'ACTIVE'
+        )
+    </insert>
 </mapper>

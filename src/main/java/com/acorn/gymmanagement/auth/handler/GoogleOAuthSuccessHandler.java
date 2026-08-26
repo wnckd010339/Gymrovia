@@ -4,6 +4,7 @@ import com.acorn.gymmanagement.auth.model.OAuthAuthenticatedUser;
 import com.acorn.gymmanagement.auth.model.PendingGoogleSignup;
 import com.acorn.gymmanagement.auth.service.GoogleOAuthService;
 import com.acorn.gymmanagement.auth.service.SessionService;
+import com.acorn.gymmanagement.common.exception.BusinessException;
 import com.acorn.gymmanagement.security.SessionSecurityContextService;
 import com.acorn.gymmanagement.security.SessionUser;
 import jakarta.servlet.ServletException;
@@ -49,9 +50,16 @@ public class GoogleOAuthSuccessHandler
             return;
         }
 
-        OAuthAuthenticatedUser user =
-                googleOAuthService.findActiveUser(subject)
-                        .orElse(null);
+        OAuthAuthenticatedUser user;
+
+        try {
+            user = googleOAuthService.findActiveUser(subject)
+                    .orElse(null);
+        } catch (BusinessException exception) {
+            clearPendingSignup(request);
+            response.sendRedirect("/login?oauthError=account_unavailable");
+            return;
+        }
 
         if (user == null) {
             savePendingSignup(request, oidcUser);
@@ -60,6 +68,7 @@ public class GoogleOAuthSuccessHandler
         }
 
         request.changeSessionId();
+        clearPendingSignup(request);
 
         SessionUser sessionUser = new SessionUser(
                 user.userId(),
@@ -99,5 +108,13 @@ public class GoogleOAuthSuccessHandler
                 PendingGoogleSignup.SESSION_KEY,
                 pendingSignup
         );
+    }
+
+    private void clearPendingSignup(HttpServletRequest request) {
+        if (request.getSession(false) != null) {
+            request.getSession(false).removeAttribute(
+                    PendingGoogleSignup.SESSION_KEY
+            );
+        }
     }
 }
