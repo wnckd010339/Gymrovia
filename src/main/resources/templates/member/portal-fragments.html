@@ -14,6 +14,20 @@
         <a th:href="@{/member/payments}" th:classappend="${active=='payments'}?'active'">결제 내역</a>
         <a th:href="@{/member/profile}" th:classappend="${active=='profile'}?'active'">내 정보</a>
     </nav>
+    <details class="notification-menu" th:if="${notificationHeader != null}">
+        <summary aria-label="알림 열기">🔔<span th:if="${notificationHeader.unreadCount > 0}" th:text="${notificationHeader.unreadCount}">3</span></summary>
+        <div class="notification-popover">
+            <div class="notification-popover-heading"><strong>알림</strong><a th:href="@{/member/notifications}">전체 보기</a></div>
+            <form class="notification-preview" th:each="item : ${notificationHeader.recent}"
+                  th:action="@{/member/notifications/{id}/read(id=${item.id})}" method="post">
+                <input type="hidden" name="target" th:value="${item.targetUrl}">
+                <button type="submit" th:classappend="${item.unread()} ? ' unread'">
+                    <strong th:text="${item.title}">알림 제목</strong><small th:text="${item.message}">알림 내용</small>
+                </button>
+            </form>
+            <p class="notification-empty" th:if="${#lists.isEmpty(notificationHeader.recent)}">새로운 알림이 없습니다.</p>
+        </div>
+    </details>
     <form class="portal-logout" th:action="@{/logout}" method="post"><button>로그아웃</button></form>
     <script th:src="@{/js/screens/member-navigation.js}"></script>
 </header>

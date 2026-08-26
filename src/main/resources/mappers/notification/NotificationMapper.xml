@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.acorn.gymmanagement.notification.mapper.NotificationMapper">
+    <resultMap id="notificationMap" type="com.acorn.gymmanagement.notification.dto.response.NotificationResponse">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="type" javaType="java.lang.String"/>
+            <arg column="title" javaType="java.lang.String"/>
+            <arg column="message" javaType="java.lang.String"/>
+            <arg column="target_url" javaType="java.lang.String"/>
+            <arg column="read_at" javaType="java.time.LocalDateTime"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="createMembershipNotifications">
+        INSERT IGNORE INTO notifications (user_id, notification_key, type, title, message, target_url)
+        SELECT recipients.user_id,
+               CONCAT('membership-', recipients.membership_id, '-', recipients.stage, '-', recipients.audience),
+               'MEMBERSHIP_EXPIRY',
+               CASE recipients.stage
+                   WHEN 'EXPIRED' THEN '회원권이 만료되었습니다'
+                   WHEN 'D0' THEN '회원권이 오늘 만료됩니다'
+                   ELSE CONCAT('회원권 만료까지 ', recipients.remaining_days, '일 남았습니다')
+               END,
+               CASE WHEN recipients.audience = 'ADMIN'
+                   THEN CONCAT(recipients.member_name, ' 회원의 ', recipients.product_name, ' 만료일을 확인해 주세요.')
+                   ELSE CONCAT(recipients.product_name, '의 이용 종료일은 ', DATE_FORMAT(recipients.end_date, '%Y.%m.%d'), '입니다.')
+               END,
+               CASE WHEN recipients.audience = 'ADMIN'
+                   THEN CONCAT('/admin/members/', recipients.member_id)
+                   ELSE '/member/memberships'
+               END
+        FROM (
+            SELECT m.user_id, mm.id membership_id, m.id member_id, m.name member_name,
+                   mp.name product_name, mm.end_date, DATEDIFF(mm.end_date, CURRENT_DATE) remaining_days,
+                   CASE WHEN mm.end_date &lt; CURRENT_DATE THEN 'EXPIRED'
+                        WHEN mm.end_date = CURRENT_DATE THEN 'D0'
+                        WHEN mm.end_date &lt;= CURRENT_DATE + INTERVAL 3 DAY THEN 'D3'
+                        ELSE 'D7' END stage,
+                   'MEMBER' audience
+            FROM member_memberships mm
+            JOIN members m ON m.id = mm.member_id
+            JOIN membership_products mp ON mp.id = mm.product_id
+            WHERE mm.status IN ('ACTIVE', 'EXPIRED')
+              AND mm.end_date BETWEEN CURRENT_DATE - INTERVAL 30 DAY AND CURRENT_DATE + INTERVAL 7 DAY
+            UNION ALL
+            SELECT u.id, mm.id, m.id, m.name, mp.name, mm.end_date,
+                   DATEDIFF(mm.end_date, CURRENT_DATE),
+                   CASE WHEN mm.end_date &lt; CURRENT_DATE THEN 'EXPIRED'
+                        WHEN mm.end_date = CURRENT_DATE THEN 'D0'
+                        WHEN mm.end_date &lt;= CURRENT_DATE + INTERVAL 3 DAY THEN 'D3'
+                        ELSE 'D7' END,
+                   'ADMIN'
+            FROM member_memberships mm
+            JOIN members m ON m.id = mm.member_id
+            JOIN membership_products mp ON mp.id = mm.product_id
+            CROSS JOIN users u
+            WHERE u.role = 'ADMIN' AND u.status = 'ACTIVE'
+              AND mm.status IN ('ACTIVE', 'EXPIRED')
+              AND mm.end_date BETWEEN CURRENT_DATE - INTERVAL 30 DAY AND CURRENT_DATE + INTERVAL 7 DAY
+        ) recipients
+    </insert>
+
+    <select id="findAllByUserId" resultMap="notificationMap">
+        SELECT id, type, title, message, target_url, read_at, created_at
+        FROM notifications
+        WHERE user_id = #{userId}
+        <if test="unreadOnly">AND read_at IS NULL</if>
+        ORDER BY created_at DESC, id DESC
+    </select>
+    <select id="findRecentByUserId" resultMap="notificationMap">
+        SELECT id, type, title, message, target_url, read_at, created_at
+        FROM notifications WHERE user_id = #{userId}
+        ORDER BY created_at DESC, id DESC LIMIT #{limit}
+    </select>
+    <select id="countUnreadByUserId" resultType="int">
+        SELECT COUNT(*) FROM notifications WHERE user_id = #{userId} AND read_at IS NULL
+    </select>
+    <update id="markRead">
+        UPDATE notifications SET read_at = COALESCE(read_at, CURRENT_TIMESTAMP)
+        WHERE id = #{notificationId} AND user_id = #{userId}
+    </update>
+    <update id="markAllRead">
+        UPDATE notifications SET read_at = CURRENT_TIMESTAMP
+        WHERE user_id = #{userId} AND read_at IS NULL
+    </update>
+</mapper>

@@ -23,6 +23,7 @@ import com.acorn.gymmanagement.trainer.service.TrainerRoutineService;
 import com.acorn.gymmanagement.trainer.service.TrainerWorkoutService;
 import com.acorn.gymmanagement.member.model.MemberGender;
 import com.acorn.gymmanagement.security.SessionUser;
+import com.acorn.gymmanagement.notification.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,8 +92,17 @@ class SecurityAccessTest {
     @MockitoBean
     private TrainerWorkoutService trainerWorkoutService;
 
+    @MockitoBean
+    private NotificationService notificationService;
+
     @BeforeEach
     void setUpDashboard() {
+        when(notificationService.header(org.mockito.ArgumentMatchers.anyLong()))
+                .thenReturn(new NotificationService.NotificationHeaderView(0, List.of()));
+        when(notificationService.findAll(
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyBoolean()
+        )).thenReturn(List.of());
         DashboardSummaryResponse summary = new DashboardSummaryResponse(
                 0, 0, 0, 0, BigDecimal.ZERO, 0, 0, 0, 0, 0, 0, 0
         );
@@ -259,6 +269,16 @@ class SecurityAccessTest {
     void memberCanAccessMemberPage() throws Exception {
         mockMvc.perform(get("/member/home").session(session(SessionUser.ROLE_MEMBER)))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void memberNotificationPageRendersOnlyMemberNavigation() throws Exception {
+        mockMvc.perform(get("/member/notifications").session(session(SessionUser.ROLE_MEMBER)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("회원 메뉴")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("관리자 메뉴")
+                )));
     }
 
     @Test

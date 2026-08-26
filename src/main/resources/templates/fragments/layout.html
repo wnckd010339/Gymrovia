@@ -11,6 +11,7 @@
         <a th:href="@{/admin/attendance}" th:classappend="${activeMenu == 'attendance'} ? 'active'"><i></i>출석 관리</a>
         <a th:href="@{/admin/trainers}" th:classappend="${activeMenu == 'trainers'} ? 'active'"><i></i>트레이너</a>
         <a th:href="@{/admin/facilities}" th:classappend="${activeMenu == 'facilities'} ? 'active'"><i></i>시설 관리</a>
+        <a th:href="@{/admin/notifications}" th:classappend="${activeMenu == 'notifications'} ? 'active'"><i></i>알림 <b class="sidebar-badge" th:if="${notificationHeader != null and notificationHeader.unreadCount > 0}" th:text="${notificationHeader.unreadCount}">3</b></a>
     </nav>
     <div class="sidebar-profile">
         <div class="avatar">관</div>
