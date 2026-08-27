@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.acorn.gymmanagement.reservation.mapper.ReservationMapper">
+
+    <resultMap id="ReservationCalendarResult" type="com.acorn.gymmanagement.reservation.dto.response.ReservationCalendarResponse">
+        <constructor>
+            <idArg name="reservationId" column="reservation_id" javaType="java.lang.Long"/>
+            <arg name="memberId" column="member_id" javaType="java.lang.Long"/>
+            <arg name="trainerId" column="trainer_id" javaType="java.lang.Long"/>
+            <arg name="customerName" column="customer_name" javaType="java.lang.String"/>
+            <arg name="customerPhone" column="customer_phone" javaType="java.lang.String"/>
+            <arg name="trainerName" column="trainer_name" javaType="java.lang.String"/>
+            <arg name="reservationType" column="reservation_type" javaType="com.acorn.gymmanagement.reservation.model.ReservationType"/>
+            <arg name="status" column="reservation_status" javaType="com.acorn.gymmanagement.reservation.model.ReservationStatus"/>
+            <arg name="startsAt" column="starts_at" javaType="java.time.LocalDateTime"/>
+            <arg name="endsAt" column="ends_at" javaType="java.time.LocalDateTime"/>
+            <arg name="memo" column="memo" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="ReservationDetailResult" type="com.acorn.gymmanagement.reservation.dto.response.ReservationDetailResponse">
+        <constructor>
+            <idArg name="reservationId" column="reservation_id" javaType="java.lang.Long"/>
+            <arg name="memberId" column="member_id" javaType="java.lang.Long"/>
+            <arg name="trainerId" column="trainer_id" javaType="java.lang.Long"/>
+            <arg name="customerName" column="customer_name" javaType="java.lang.String"/>
+            <arg name="customerPhone" column="customer_phone" javaType="java.lang.String"/>
+            <arg name="reservationType" column="reservation_type" javaType="com.acorn.gymmanagement.reservation.model.ReservationType"/>
+            <arg name="status" column="reservation_status" javaType="com.acorn.gymmanagement.reservation.model.ReservationStatus"/>
+            <arg name="startsAt" column="starts_at" javaType="java.time.LocalDateTime"/>
+            <arg name="endsAt" column="ends_at" javaType="java.time.LocalDateTime"/>
+            <arg name="memo" column="memo" javaType="java.lang.String"/>
+            <arg name="cancellationReason" column="cancellation_reason" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="ReservationSummaryResult" type="com.acorn.gymmanagement.reservation.dto.response.ReservationSummaryResponse">
+        <constructor>
+            <arg name="consultationCount" column="consultation_count" javaType="_int"/>
+            <arg name="trialPtCount" column="trial_pt_count" javaType="_int"/>
+            <arg name="regularPtCount" column="regular_pt_count" javaType="_int"/>
+            <arg name="cancelledOrNoShowCount" column="cancelled_or_no_show_count" javaType="_int"/>
+            <arg name="pendingCount" column="pending_count" javaType="_int"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="ReservationOptionResult" type="com.acorn.gymmanagement.reservation.dto.response.ReservationOptionResponse">
+        <constructor>
+            <idArg name="id" column="option_id" javaType="java.lang.Long"/>
+            <arg name="name" column="option_name" javaType="java.lang.String"/>
+            <arg name="description" column="option_description" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="reservationSelectColumns">
+        r.id AS reservation_id, r.member_id, r.trainer_id, r.customer_name, r.customer_phone,
+        r.reservation_type, r.status AS reservation_status, r.starts_at, r.ends_at, r.memo
+    </sql>
+
+    <sql id="reservationFrom">FROM reservations r</sql>
+
+    <select id="findCalendar" resultMap="ReservationCalendarResult">
+        SELECT <include refid="reservationSelectColumns"/>, t.name AS trainer_name
+        <include refid="reservationFrom"/>
+        LEFT JOIN trainers t ON t.id = r.trainer_id
+        WHERE r.starts_at &gt;= #{weekStart} AND r.starts_at &lt; #{weekEnd}
+        <if test="trainerId != null">AND r.trainer_id = #{trainerId}</if>
+        <if test="reservationType != null and reservationType != ''">AND r.reservation_type = #{reservationType}</if>
+        <if test="status != null and status != ''">AND r.status = #{status}</if>
+        ORDER BY r.starts_at, r.id
+    </select>
+
+    <select id="findSummary" resultMap="ReservationSummaryResult">
+        SELECT COALESCE(SUM(reservation_type = 'CONSULTATION'), 0) AS consultation_count,
+               COALESCE(SUM(reservation_type = 'TRIAL_PT'), 0) AS trial_pt_count,
+               COALESCE(SUM(reservation_type = 'REGULAR_PT'), 0) AS regular_pt_count,
+               COALESCE(SUM(status IN ('CANCELLED', 'NO_SHOW')), 0) AS cancelled_or_no_show_count,
+               COALESCE(SUM(status = 'PENDING'), 0) AS pending_count
+        FROM reservations
+        WHERE starts_at &gt;= #{date} AND starts_at &lt; DATE_ADD(#{date}, INTERVAL 1 DAY)
+    </select>
+
+    <select id="findById" resultMap="ReservationDetailResult">
+        SELECT <include refid="reservationSelectColumns"/>, r.cancellation_reason
+        <include refid="reservationFrom"/>
+        WHERE r.id = #{reservationId}
+    </select>
+
+    <select id="findActiveMembers" resultMap="ReservationOptionResult">
+        SELECT m.id AS option_id, m.name AS option_name, m.phone AS option_description
+        FROM members m JOIN users u ON u.id = m.user_id
+        WHERE m.status = 'ACTIVE' AND u.status = 'ACTIVE'
+        <if test="keyword != null and keyword != ''">
+            AND (m.name LIKE CONCAT('%', #{keyword}, '%') OR m.phone LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY m.name, m.id LIMIT 30
+    </select>
+
+    <select id="findActiveTrainers" resultMap="ReservationOptionResult">
+        SELECT t.id AS option_id, t.name AS option_name,
+               COALESCE(t.specialty, '전문 분야 미등록') AS option_description
+        FROM trainers t JOIN users u ON u.id = t.user_id
+        WHERE t.status = 'ACTIVE' AND u.status = 'ACTIVE'
+        ORDER BY t.name, t.id
+    </select>
+
+    <select id="existsTrainerConflict" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM reservations r
+            WHERE r.trainer_id = #{trainerId}
+              AND r.status NOT IN ('CANCELLED', 'NO_SHOW')
+              AND r.starts_at &lt; #{endsAt} AND r.ends_at &gt; #{startsAt}
+            <if test="excludeReservationId != null">AND r.id != #{excludeReservationId}</if>
+        )
+    </select>
+
+    <select id="findActiveMemberById"
+            resultMap="ReservationOptionResult">
+        SELECT
+            m.id AS option_id,
+            m.name AS option_name,
+            m.phone AS option_description
+        FROM members m
+        JOIN users u ON u.id = m.user_id
+        WHERE m.id = #{memberId}
+            AND m.status = 'ACTIVE'
+            AND u.status = 'ACTIVE'
+    </select>
+
+    <select id="existsActiveTrainer"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM trainers t
+            JOIN users u ON u.id = t.user_id
+            WHERE t.id = #{trainerId}
+                AND t.status = 'ACTIVE'
+                AND u.status = 'ACTIVE'
+        )
+    </select>
+
+    <insert id="insertReservation">
+        INSERT INTO reservations (
+            member_id, trainer_id, customer_name, customer_phone, reservation_type,
+            status, starts_at, ends_at, memo, created_by
+        ) VALUES (
+            #{memberId}, #{trainerId}, #{customerName}, #{customerPhone}, #{reservationType},
+            #{status}, #{startsAt}, #{endsAt}, #{memo}, #{createdBy}
+        )
+    </insert>
+
+    <update id="updateReservation">
+        UPDATE reservations
+        SET member_id = #{memberId},
+            trainer_id = #{trainerId},
+            customer_name = #{customerName},
+            customer_phone = #{customerPhone},
+            reservation_type = #{reservationType},
+            starts_at = #{startsAt},
+            ends_at = #{endsAt},
+            memo = #{memo},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{reservationId}
+            AND status = #{status}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE reservations
+        SET status = #{nextStatus},
+            cancellation_reason = #{cancellationReason},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{reservationId}
+            AND status = #{currentStatus}
+    </update>
+</mapper>

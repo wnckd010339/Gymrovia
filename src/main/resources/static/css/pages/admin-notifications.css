@@ -1,0 +1,12 @@
+.admin-layout .admin-shell .notification-page {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 42px;
+}
+
+@media (max-width: 720px) {
+    .admin-layout .admin-shell .notification-page {
+        padding: 25px 16px;
+    }
+}

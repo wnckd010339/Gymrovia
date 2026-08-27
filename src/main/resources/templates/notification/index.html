@@ -7,8 +7,10 @@
     <link rel="stylesheet" th:if="${!adminView}" th:href="@{/css/layouts/member.css}">
     <link rel="stylesheet" th:if="${adminView}" th:href="@{/css/layouts/admin.css}">
     <link rel="stylesheet" th:href="@{/css/pages/notifications.css}">
+    <link rel="stylesheet" th:if="${adminView}" th:href="@{/css/pages/admin-notifications.css}">
 </head>
 <body th:classappend="${adminView} ? 'admin-layout'">
+<div th:classappend="${adminView} ? 'admin-shell'">
 <th:block th:if="${!adminView}">
     <header th:replace="~{member/portal-fragments :: header('notifications')}"></header>
 </th:block>
@@ -42,5 +44,6 @@
         <div class="notification-empty-state" th:if="${#lists.isEmpty(notifications)}"><span>✓</span><strong>확인할 알림이 없습니다.</strong><p>새로운 소식이 생기면 여기에 표시됩니다.</p></div>
     </section>
 </main>
+</div>
 </body>
 </html>

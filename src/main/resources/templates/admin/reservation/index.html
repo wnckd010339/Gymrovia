@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>상담·PT 예약 | FitFlow</title>
+    <link rel="stylesheet" th:href="@{/css/layouts/admin.css}" href="/css/layouts/admin.css">
+    <link rel="stylesheet" th:href="@{/css/pages/admin/reservation.css}" href="/css/pages/admin/reservation.css">
+</head>
+<body>
+<div class="admin-shell">
+    <aside th:replace="~{fragments/layout :: adminSidebar('reservations')}"></aside>
+    <main class="reservation-content">
+        <header class="reservation-header">
+            <div><p class="eyebrow">RESERVATION MANAGEMENT</p><h1>상담·PT 예약</h1><p>상담과 트레이너의 PT 일정을 주간 단위로 관리합니다.</p></div>
+            <div class="header-actions">
+                <a class="secondary-button" th:href="@{/admin/reservations}">오늘</a>
+                <a class="icon-button" aria-label="이전 주" th:href="@{/admin/reservations(weekStart=${condition.weekStart.minusWeeks(1)},trainerId=${condition.trainerId},reservationType=${condition.reservationType},status=${condition.status})}">‹</a>
+                <a class="icon-button" aria-label="다음 주" th:href="@{/admin/reservations(weekStart=${condition.weekStart.plusWeeks(1)},trainerId=${condition.trainerId},reservationType=${condition.reservationType},status=${condition.status})}">›</a>
+                <button class="primary-button" type="button" data-reservation-create>새 예약 등록</button>
+            </div>
+        </header>
+        <p class="reservation-notice success" th:if="${message}" th:text="${message}"></p>
+        <p class="reservation-notice error" th:if="${errorMessage}" th:text="${errorMessage}"></p>
+
+        <section class="reservation-summary">
+            <article><span>상담</span><strong th:text="|${summary.consultationCount}건|">0건</strong><small>오늘 예정</small></article>
+            <article><span>체험 PT</span><strong th:text="|${summary.trialPtCount}건|">0건</strong><small>신규 고객 체험</small></article>
+            <article><span>정규 PT</span><strong th:text="|${summary.regularPtCount}건|">0건</strong><small>회원 PT 일정</small></article>
+            <article><span>취소·노쇼</span><strong th:text="|${summary.cancelledOrNoShowCount}건|">0건</strong><small th:text="|미확정 ${summary.pendingCount}건|">미확정 0건</small></article>
+        </section>
+
+        <form class="reservation-filter" method="get" th:action="@{/admin/reservations}">
+            <input type="hidden" name="weekStart" th:value="${condition.weekStart}">
+            <label>담당 트레이너<select name="trainerId"><option value="">전체 트레이너</option><option th:each="trainer : ${trainers}" th:value="${trainer.id}" th:text="${trainer.name}" th:selected="${trainer.id == condition.trainerId}"></option></select></label>
+            <label>예약 종류<select name="reservationType"><option value="">전체 종류</option><option th:each="type : ${reservationTypes}" th:value="${type}" th:text="${type.label}" th:selected="${type.name() == condition.reservationType}"></option></select></label>
+            <label>예약 상태<select name="status"><option value="">전체 상태</option><option th:each="itemStatus : ${reservationStatuses}" th:value="${itemStatus}" th:text="${itemStatus.label}" th:selected="${itemStatus.name() == condition.status}"></option></select></label>
+            <div class="filter-actions"><a th:href="@{/admin/reservations(weekStart=${condition.weekStart})}">초기화</a><button type="submit">조회</button></div>
+        </form>
+
+        <section class="reservation-workspace">
+            <section class="calendar-card">
+                <div class="calendar-heading">
+                    <div><span>WEEKLY CALENDAR</span><h2 th:text="|${condition.weekStart} – ${condition.weekStart.plusDays(5)}|">주간 일정</h2></div>
+                    <div class="calendar-legend"><span class="consultation">상담</span><span class="trial">체험 PT</span><span class="regular">정규 PT</span><span class="cancelled">취소</span><span class="noshow">노쇼</span></div>
+                </div>
+                <div class="calendar-scroll"><div class="weekly-calendar" th:attr="data-week-start=${condition.weekStart}">
+                    <div class="calendar-day-headings"><span class="time-heading">시간</span><span th:each="offset : ${#numbers.sequence(0,5)}"><strong th:text="${condition.weekStart.plusDays(offset).dayOfWeek.getDisplayName(T(java.time.format.TextStyle).SHORT,T(java.util.Locale).KOREAN)}">월</strong><small th:text="${#temporals.format(condition.weekStart.plusDays(offset),'MM.dd')}">08.24</small></span></div>
+                    <div class="calendar-body"><div class="calendar-time-axis"><span th:each="hour : ${#numbers.sequence(9,20)}" th:text="|${hour}:00|">09:00</span></div>
+                        <div class="calendar-stage"><div class="calendar-grid-lines"></div>
+                            <button th:each="reservation : ${reservations}" type="button" class="calendar-event" th:classappend="| type-${reservation.reservationType} status-${reservation.status}|"
+                                    th:attr="data-reservation-id=${reservation.reservationId},data-member-id=${reservation.memberId},data-trainer-id=${reservation.trainerId},data-customer-name=${reservation.customerName},data-customer-phone=${reservation.customerPhone},data-reservation-type=${reservation.reservationType},data-reservation-status=${reservation.status},data-starts-at=${reservation.startsAt},data-ends-at=${reservation.endsAt},data-memo=${reservation.memo}">
+                                <time th:text="${#temporals.format(reservation.startsAt,'HH:mm')}">09:00</time><strong th:text="${reservation.customerName}">고객</strong><span th:text="${reservation.reservationTypeLabel()}">상담</span><small th:text="${reservation.trainerName ?: '트레이너 미배정'}">미배정</small>
+                            </button>
+                        </div>
+                    </div>
+                </div></div>
+            </section>
+            <aside class="reservation-side-panel">
+                <section><div class="side-heading"><h2>오늘 예약</h2></div><div class="side-list"><button th:each="reservation : ${reservations}" th:if="${reservation.startsAt.toLocalDate().equals(T(java.time.LocalDate).now())}" type="button" th:attr="data-open-reservation=${reservation.reservationId}"><time th:text="${#temporals.format(reservation.startsAt,'HH:mm')}">09:00</time><span><strong th:text="${reservation.customerName}">고객</strong><small th:text="${reservation.reservationTypeLabel()}">상담</small></span></button></div></section>
+                <section><div class="side-heading"><h2>미확정 예약</h2><span th:text="|${summary.pendingCount}건|">0건</span></div><div class="side-list"><button th:each="reservation : ${reservations}" th:if="${reservation.status.name() == 'PENDING'}" type="button" th:attr="data-open-reservation=${reservation.reservationId}"><time th:text="${#temporals.format(reservation.startsAt,'MM.dd HH:mm')}">08.27 14:00</time><span><strong th:text="${reservation.customerName}">고객</strong><small>확인 필요</small></span></button></div></section>
+            </aside>
+        </section>
+    </main>
+
+    <dialog id="reservation-dialog" class="reservation-dialog">
+        <form id="reservation-form" method="post" th:action="@{/admin/reservations}">
+            <header><div><span>RESERVATION</span><h2 id="reservation-dialog-title">새 예약 등록</h2></div><button type="button" data-dialog-close aria-label="닫기">×</button></header>
+            <div class="reservation-form-grid">
+                <label>예약 종류<select id="reservationType" name="reservationType" required><option value="">선택</option><option th:each="type : ${reservationTypes}" th:value="${type}" th:text="${type.label}"></option></select></label>
+                <label>담당 트레이너<select id="trainerId" name="trainerId"><option value="">미배정</option><option th:each="trainer : ${trainers}" th:value="${trainer.id}" th:text="|${trainer.name} · ${trainer.description}|"></option></select></label>
+                <label class="full-width">회원 검색<span class="member-search"><input id="memberKeyword" type="search" placeholder="회원 이름 또는 연락처"><button id="memberSearchButton" type="button">검색</button></span><select id="memberId" name="memberId"><option value="">비회원 예약</option></select></label>
+                <label>고객 이름<input id="customerName" name="customerName" type="text" maxlength="100"></label><label>연락처<input id="customerPhone" name="customerPhone" type="tel" maxlength="30"></label>
+                <label>시작 시간<input id="startsAt" name="startsAt" type="datetime-local" required></label><label>종료 시간<input id="endsAt" name="endsAt" type="datetime-local" required></label>
+                <label class="full-width">메모<textarea id="memo" name="memo" maxlength="1000" rows="4"></textarea></label>
+            </div>
+            <footer><button class="secondary-button" type="button" data-dialog-close>닫기</button><button class="primary-button" type="submit">저장</button></footer>
+        </form>
+        <section id="reservation-status-actions" class="status-actions" hidden><form method="post" data-status-form><input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"><input type="hidden" name="weekStart" th:value="${condition.weekStart}"><div><button name="status" value="CONFIRMED" type="submit">예약 확정</button><button name="status" value="COMPLETED" type="submit">방문 완료</button><button name="status" value="NO_SHOW" type="submit">노쇼</button></div><label>취소 사유<input name="cancellationReason" maxlength="500" placeholder="선택 입력"></label><button class="danger-button" name="status" value="CANCELLED" type="submit">예약 취소</button></form></section>
+    </dialog>
+</div>
+<script th:src="@{/js/screens/admin-reservation.js}" src="/js/screens/admin-reservation.js"></script>
+</body>
+</html>
