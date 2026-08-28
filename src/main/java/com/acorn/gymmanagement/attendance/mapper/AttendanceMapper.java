@@ -32,5 +32,7 @@ public interface AttendanceMapper {
 
     boolean existsOpenAttendance(Long memberId);
 
+    boolean existsOpenAttendanceByUserId(Long userId);
+
     int insertAttendance(AttendanceRegistration registration);
 }

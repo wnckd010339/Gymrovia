@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.acorn.gymmanagement.attendance.mapper.AttendanceQrMapper">
+
+    <resultMap id="AttendanceQrTokenResult"
+               type="com.acorn.gymmanagement.attendance.model.AttendanceQrToken">
+        <constructor>
+            <idArg name="qrTokenId" column="qr_token_id" javaType="java.lang.Long"/>
+            <arg name="centerCode" column="center_code" javaType="java.lang.String"/>
+            <arg name="centerName" column="center_name" javaType="java.lang.String"/>
+            <arg name="expiresAt" column="expires_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="AttendanceQrVerificationResult"
+               type="com.acorn.gymmanagement.attendance.model.AttendanceQrVerification">
+        <constructor>
+            <idArg name="verificationId" column="verification_id" javaType="java.lang.Long"/>
+            <arg name="memberId" column="member_id" javaType="java.lang.Long"/>
+            <arg name="centerCode" column="center_code" javaType="java.lang.String"/>
+            <arg name="centerName" column="center_name" javaType="java.lang.String"/>
+            <arg name="expiresAt" column="verification_expires_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insertQrToken">
+        INSERT INTO attendance_qr_tokens (
+            token_hash,
+            center_code,
+            center_name,
+            expires_at
+        ) VALUES (
+            #{tokenHash},
+            #{centerCode},
+            #{centerName},
+            #{expiresAt}
+        )
+    </insert>
+
+    <select id="findValidQrTokenForUpdate" resultMap="AttendanceQrTokenResult">
+        SELECT id AS qr_token_id,
+               center_code,
+               center_name,
+               expires_at
+        FROM attendance_qr_tokens
+        WHERE token_hash = #{tokenHash}
+          AND status = 'ACTIVE'
+          AND expires_at &gt; #{now}
+        FOR UPDATE
+    </select>
+
+    <insert id="insertVerification">
+        INSERT INTO attendance_qr_verifications (
+            qr_token_id,
+            member_id,
+            verification_hash,
+            expires_at
+        ) VALUES (
+            #{qrTokenId},
+            #{memberId},
+            #{verificationHash},
+            #{expiresAt}
+        )
+    </insert>
+
+    <select id="findUsableVerificationForUpdate" resultMap="AttendanceQrVerificationResult">
+        SELECT v.id AS verification_id,
+               v.member_id,
+               t.center_code,
+               t.center_name,
+               v.expires_at AS verification_expires_at
+        FROM attendance_qr_verifications v
+        JOIN attendance_qr_tokens t ON t.id = v.qr_token_id
+        WHERE v.verification_hash = #{verificationHash}
+          AND v.member_id = #{memberId}
+          AND v.consumed_at IS NULL
+          AND v.expires_at &gt; #{now}
+        FOR UPDATE
+    </select>
+
+    <update id="consumeVerification">
+        UPDATE attendance_qr_verifications
+        SET consumed_at = #{consumedAt}
+        WHERE id = #{verificationId}
+          AND consumed_at IS NULL
+          AND expires_at &gt; #{consumedAt}
+    </update>
+
+    <update id="expireQrTokens">
+        UPDATE attendance_qr_tokens
+        SET status = 'EXPIRED'
+        WHERE status = 'ACTIVE'
+          AND expires_at &lt;= #{now}
+    </update>
+
+    <delete id="deleteExpiredVerifications">
+        DELETE FROM attendance_qr_verifications
+        WHERE expires_at &lt; #{before}
+    </delete>
+
+</mapper>

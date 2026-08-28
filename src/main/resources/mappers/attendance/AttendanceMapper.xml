@@ -107,6 +107,19 @@
         SELECT EXISTS(SELECT 1 FROM attendances WHERE member_id = #{memberId} AND checked_out_at IS NULL)
     </select>
 
+    <select id="existsOpenAttendanceByUserId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM attendances a
+            JOIN members m ON m.id = a.member_id
+            JOIN users u ON u.id = m.user_id
+            WHERE u.id = #{userId}
+                AND u.status = 'ACTIVE'
+                AND m.status = 'ACTIVE'
+                AND a.checked_out_at IS NULL
+        )
+    </select>
+
     <insert id="insertAttendance" useGeneratedKeys="true" keyProperty="attendanceId" keyColumn="id">
         INSERT INTO attendances(member_id, attendance_date, checked_in_at)
         VALUES(#{memberId}, #{attendanceDate}, #{checkedInAt})

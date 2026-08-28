@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>센터 QR 출석 | FitFlow</title>
+
+    <link
+            rel="stylesheet"
+            th:href="@{/css/layouts/admin.css}"
+            href="/css/layouts/admin.css"
+    >
+    <link
+            rel="stylesheet"
+            th:href="@{/css/pages/admin/attendance-qr.css}"
+            href="/css/pages/admin/attendance-qr.css"
+    >
+</head>
+<body>
+<div class="admin-shell">
+    <aside th:replace="~{fragments/layout :: adminSidebar('attendance')}"></aside>
+
+    <main class="content qr-admin-page">
+        <header class="qr-page-header">
+            <div>
+                <p class="eyebrow">
+                    QR ATTENDANCE
+                </p>
+
+                <h1>센터 출석 QR</h1>
+
+                <p>
+                    회원이 휴대폰 카메라로 QR을 스캔한 후
+                    체크인 또는 체크아웃 버튼을 누릅니다.
+                </p>
+            </div>
+
+            <a class="qr-back-link"
+               th:href="@{/admin/attendance}">
+                출석 관리로 돌아가기
+            </a>
+        </header>
+
+        <section class="qr-display-card">
+            <div class="qr-display-heading">
+                <div>
+                    <span>현재 센터</span>
+
+                    <strong th:text="${centerName}">
+                        핏플로우 강남센터
+                    </strong>
+                </div>
+
+                <span id="qr-status" class="qr-status">
+                    QR 준비 중
+                </span>
+            </div>
+
+            <div class="qr-image-frame">
+                <img id="attendance-qr-image"
+                     alt="회원 출석용 센터 QR 코드"
+                     hidden>
+                <div id="qr-loading" class="qr-loading">
+                    QR을 생성하고 있습니다.
+                </div>
+            </div>
+
+            <div class="qr-timer">
+                <span>남은 시간</span>
+
+                <strong id="qr-countdown">
+                    00:00
+                </strong>
+            </div>
+
+            <button id="qr-refresh-button"
+                    class="qr-refresh-button"
+                    type="button">
+                새 QR 발급
+            </button>
+
+            <p id="qr-error" class="qr-error" hidden></p>
+        </section>
+
+        <section class="qr-guide-card">
+            <h2>이용 안내</h2>
+
+            <ol>
+                <li>
+                    회원은 FitFlow에 로그인한 상태여야 합니다.
+                </li>
+                <li>
+                    휴대폰 기본 카메라로 QR을 스캔합니다.
+                </li>
+                <li>
+                    센터 인증 화면에서 체크인 또는 체크아웃을 누릅니다.
+                </li>
+                <li>
+                    QR은 보안을 위해 자동으로 갱신됩니다.
+                </li>
+            </ol>
+        </section>
+    </main>
+</div>
+
+<script
+    defer th:src="@{/js/screens/admin-attendance-qr.js}" src="/js/screens/admin-attendance-qr.js"></script>
+
+</body>
+</html>

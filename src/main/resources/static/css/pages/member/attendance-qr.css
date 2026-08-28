@@ -1,0 +1,182 @@
+.qr-attendance-page{
+    max-width: 760px;
+}
+
+.qr-verification-card {
+    position: relative;
+    padding: 36px;
+    margin-bottom: 18px;
+    overflow: hidden;
+    text-align: center;
+    background:
+        linear-gradient(
+            135deg,
+            var(--deep),
+            var(--green)
+        );
+    border-radius: 22px;
+    box-shadow: 0 16px 40px rgba(18, 60, 52, 0.14);
+    color: #fff;
+}
+
+.qr-verification-card::after {
+    content: "";
+    position: absolute;
+    top: -90px;
+    right: -90px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: rgba(217, 243, 106, 0.09);
+}
+
+.verification-icon {
+    display: grid;
+    place-items: center;
+    width: 66px;
+    height: 66px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: var(--lime);
+    color: var(--deep);
+    font-size: 32px;
+    font-weight: 800;
+}
+
+.verification-label {
+    margin: 0 0 8px;
+    color: #cae1d8;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.qr-verification-card h2{
+    margin: 0;
+    font-size: 26px;
+    letter-spacing: -0.04em;
+}
+
+.verification-description {
+    margin: 12px 0 24px;
+    color: #dcebe6;
+}
+
+.qr-attendance-form {
+    width: min(100%, 420px);
+    margin: 0 auto;
+}
+
+.qr-action-button {
+    width: 100%;
+    min-height: 54px;
+    padding: 12px 20px;
+    border: 0;
+    border-radius: 13px;
+    background: var(--lime);
+    color: var(--deep);
+    font: inherit;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition:
+        transform 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.qr-action-button:hover {
+    transform: translateY(-1px);
+}
+
+.qr-action-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.qr-action-button.checkout {
+    background: #fff;
+    color: var(--deep);
+}
+
+.verification-timer {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    margin-top: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.verification-timer span {
+    color: #cae1d8;
+    font-size: 12px;
+}
+
+.verification-timer strong {
+    min-width: 42px;
+    color: var(--lime);
+    font-size: 13px;
+}
+
+.verification-expired-message {
+    margin: 20px 0 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    font-weight: 700;
+}
+
+.qr-guide-card ul {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.qr-guide-card li {
+    position: relative;
+    padding-left: 22px;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.qr-guide-card li::before {
+    content: "✓";
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: var(--green);
+    font-weight: 800;
+}
+
+.attendance-history-link {
+    display: inline-flex;
+    justify-content: center;
+    width: 100%;
+    padding: 12px 16px;
+    margin-top: 24px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--green);
+    font-weight: 800;
+}
+
+@media (max-width: 600px) {
+    .qr-verification-card {
+        padding: 28px 20px;
+        border-radius: 18px;
+    }
+
+    .qr-verification-card h2 {
+        font-size: 22px;
+    }
+
+    .qr-action-button {
+        min-height: 52px;
+    }
+}
