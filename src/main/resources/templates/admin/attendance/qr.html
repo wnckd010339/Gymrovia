@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport"
           content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <title>센터 QR 출석 | FitFlow</title>
 
@@ -33,8 +34,8 @@
                 <h1>센터 출석 QR</h1>
 
                 <p>
-                    회원이 휴대폰 카메라로 QR을 스캔한 후
-                    체크인 또는 체크아웃 버튼을 누릅니다.
+                    회원이 휴대폰 카메라로 QR을 촬영하면
+                    현재 출석 상태에 따라 입실 또는 퇴실이 자동 처리됩니다.
                 </p>
             </div>
 
@@ -93,10 +94,10 @@
                     회원은 FitFlow에 로그인한 상태여야 합니다.
                 </li>
                 <li>
-                    휴대폰 기본 카메라로 QR을 스캔합니다.
+                    휴대폰 기본 카메라로 센터 QR을 촬영합니다.
                 </li>
                 <li>
-                    센터 인증 화면에서 체크인 또는 체크아웃을 누릅니다.
+                    QR 인증 후 체크인 또는 체크아웃이 자동 처리됩니다.
                 </li>
                 <li>
                     QR은 보안을 위해 자동으로 갱신됩니다.

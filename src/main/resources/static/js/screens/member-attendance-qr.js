@@ -1,78 +1,36 @@
 (() => {
+    const form =
+        document.querySelector("#qr-attendance-form");
+
     const verificationCard =
         document.querySelector("#qr-verification");
 
-    const countdownElement =
-        document.querySelector("#verification-countdown");
+    const processingMessage =
+        document.querySelector(
+            ".qr-processing-indicator strong"
+        );
 
-    const expiredMessage =
-        document.querySelector("#verification-expired-message");
-
-    const actionButton =
-        document.querySelector(".qr-action-button");
-
-    if (
-        !verificationCard ||
-        !countdownElement ||
-        !actionButton
-    ) {
+    if (!form || !verificationCard) {
         return;
     }
 
-    let remainingSeconds = Number(
-        verificationCard.dataset.seconds
-    );
-
-    if (
-        !Number.isFinite(remainingSeconds) ||
-        remainingSeconds <= 0
-    ) {
-        remainingSeconds = 120;
+    if (form.dataset.submitted === "true") {
+        return;
     }
 
-    const renderCountdown = () => {
-        const minutes = Math.floor(
-            remainingSeconds / 60
-        );
+    form.dataset.submitted = "true";
 
-        const seconds =
-            remainingSeconds % 60;
+    const action =
+        verificationCard.dataset.action;
 
-        countdownElement.textContent =
-            `${String(minutes).padStart(2, "0")}:` +
-            `${String(seconds).padStart(2, "0")}`;
-    };
+    if (processingMessage) {
+        processingMessage.textContent =
+            action === "CHECK_OUT"
+                ? "체크아웃을 처리하고 있습니다."
+                : "체크인을 처리하고 있습니다.";
+    }
 
-    const expireVerification = () => {
-        actionButton.disabled = true;
-        countdownElement.textContent = "00:00";
-
-        if (expiredMessage) {
-            expiredMessage.hidden = false;
-        }
-    };
-
-    renderCountdown();
-
-    const timerId = window.setInterval(() =>  {
-        remainingSeconds -= 1;
-
-        if (remainingSeconds <= 0) {
-            window.clearInterval(timerId);
-            expireVerification();
-            return;
-        }
-
-        renderCountdown();
-    }, 1000);
-
-    const form =
-        document.querySelector(".qr-attendance-form");
-
-    form?.addEventListener("submit", () => {
-        actionButton.disabled = true;
-        actionButton.textContent = "처리 중...";
-    });
-
-
+    window.setTimeout(() => {
+        form.requestSubmit();
+    }, 300);
 })();

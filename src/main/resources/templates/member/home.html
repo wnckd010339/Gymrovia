@@ -14,54 +14,119 @@
     <p class="member-notice success" th:if="${message}" th:text="${message}"></p>
     <p class="member-notice error" th:if="${errorMessage}" th:text="${errorMessage}"></p>
     <section class="member-hero">
-        <div class="hero-copy"><p>MY FITFLOW</p><h1>오늘도 한 걸음 더,<br><strong>나답게 움직여 볼까요?</strong></h1><span th:text="|${#temporals.format(home.today, 'M월 d일 EEEE')} · 이번 주 ${home.summary.weeklyWorkoutCount}번째 운동이에요.|">7월 30일 목요일 · 이번 주 3번째 운동이에요.</span>
+        <div class="hero-copy"><p>MY FITFLOW</p>
+            <h1>오늘도 한 걸음 더,<br><strong>나답게 움직여 볼까요?</strong></h1><span
+                    th:text="|${#temporals.format(home.today, 'M월 d일 EEEE')} · 이번 주 ${home.summary.weeklyWorkoutCount}번째 운동이에요.|">7월 30일 목요일 · 이번 주 3번째 운동이에요.</span>
             <div class="hero-actions">
-                <form th:if="${home.attendance == null}" th:action="@{/member/attendance/check-in}" method="post"><button class="primary" type="submit">체크인하기</button></form>
-                <form th:if="${home.attendance != null}" th:action="@{/member/attendance/check-out}" method="post"><button class="primary" type="submit">체크아웃하기</button></form>
+                <a class="primary" th:href="@{/member/attendance}">QR 출석 안내</a>
                 <a href="/member/workouts">운동 기록하기</a>
             </div>
         </div>
-        <div class="weekly-ring"><div><strong th:text="${home.summary.weeklyWorkoutCount}">3</strong><span th:text="|/ ${home.weeklyWorkoutGoal}회|">/ 4회</span></div><p>이번 주 운동 목표</p><small th:if="${home.summary.weeklyWorkoutCount < home.weeklyWorkoutGoal}" th:text="|${home.weeklyWorkoutGoal - home.summary.weeklyWorkoutCount}번 더 채우면 목표 달성!|">한 번만 더 채우면 목표 달성!</small><small th:unless="${home.summary.weeklyWorkoutCount < home.weeklyWorkoutGoal}">이번 주 목표를 달성했어요!</small></div>
+        <div class="weekly-ring">
+            <div><strong th:text="${home.summary.weeklyWorkoutCount}">3</strong><span
+                    th:text="|/ ${home.weeklyWorkoutGoal}회|">/ 4회</span></div>
+            <p>이번 주 운동 목표</p><small th:if="${home.summary.weeklyWorkoutCount < home.weeklyWorkoutGoal}"
+                                    th:text="|${home.weeklyWorkoutGoal - home.summary.weeklyWorkoutCount}번 더 채우면 목표 달성!|">한
+            번만 더 채우면 목표 달성!</small><small th:unless="${home.summary.weeklyWorkoutCount < home.weeklyWorkoutGoal}">이번 주
+            목표를 달성했어요!</small></div>
     </section>
 
     <section class="member-summary">
-        <article><span>현재 회원권</span><strong th:text="${home.summary.membershipName ?: '이용 중인 회원권 없음'}">3개월 자유 이용권</strong><p th:if="${home.summary.membershipEndDate != null}"><span class="inline" th:text="|${#temporals.format(home.summary.membershipEndDate, 'yyyy.MM.dd')}까지 · |"></span><b th:text="|${home.summary.remainingDays}일 남음|">10일 남음</b></p><p th:unless="${home.summary.membershipEndDate != null}">회원권 등록이 필요합니다.</p></article>
-        <article><span>PT 잔여 횟수</span><strong th:text="|${home.summary.remainingPtSessions}회|">5회</strong><p th:text="${home.trainer != null ? '담당 ' + home.trainer.trainerName + ' 트레이너' : '담당 트레이너 없음'}">담당 김도윤 트레이너</p></article>
-        <article><span>이번 달 출석</span><strong th:text="|${home.summary.monthlyAttendanceCount}일|">14일</strong><p th:if="${home.attendanceDifference() > 0}" th:text="|지난달보다 ${home.attendanceDifference()}일 더 왔어요|">지난달보다 3일 더 왔어요</p><p th:if="${home.attendanceDifference() == 0}">지난달과 같은 횟수예요</p><p th:if="${home.attendanceDifference() < 0}" th:text="|지난달보다 ${-home.attendanceDifference()}일 적어요|">지난달보다 적어요</p></article>
+        <article><span>현재 회원권</span><strong th:text="${home.summary.membershipName ?: '이용 중인 회원권 없음'}">3개월 자유
+            이용권</strong>
+            <p th:if="${home.summary.membershipEndDate != null}"><span class="inline"
+                                                                       th:text="|${#temporals.format(home.summary.membershipEndDate, 'yyyy.MM.dd')}까지 · |"></span><b
+                    th:text="|${home.summary.remainingDays}일 남음|">10일 남음</b></p>
+            <p th:unless="${home.summary.membershipEndDate != null}">회원권 등록이 필요합니다.</p></article>
+        <article><span>PT 잔여 횟수</span><strong th:text="|${home.summary.remainingPtSessions}회|">5회</strong>
+            <p th:text="${home.trainer != null ? '담당 ' + home.trainer.trainerName + ' 트레이너' : '담당 트레이너 없음'}">담당 김도윤
+                트레이너</p></article>
+        <article><span>이번 달 출석</span><strong th:text="|${home.summary.monthlyAttendanceCount}일|">14일</strong>
+            <p th:if="${home.attendanceDifference() > 0}" th:text="|지난달보다 ${home.attendanceDifference()}일 더 왔어요|">지난달보다
+                3일 더 왔어요</p>
+            <p th:if="${home.attendanceDifference() == 0}">지난달과 같은 횟수예요</p>
+            <p th:if="${home.attendanceDifference() < 0}" th:text="|지난달보다 ${-home.attendanceDifference()}일 적어요|">지난달보다
+                적어요</p></article>
     </section>
 
     <section class="member-grid">
         <article class="member-card routine">
-            <div class="card-heading"><div><p>TODAY'S ROUTINE</p><h2>오늘의 운동</h2></div><a href="/member/workouts">전체 루틴</a></div>
-            <div class="routine-title" th:if="${home.routine != null}"><span>TODAY</span><div><strong th:text="${home.routine.title}">하체 근력 강화</strong><small th:text="${home.exercises.isEmpty() ? '오늘 예정된 세부 운동이 없습니다.' : '운동 ' + home.exercises.size() + '종목'}">운동 5종목</small></div></div>
-            <div class="routine-title" th:unless="${home.routine != null}"><span>REST</span><div><strong>활성화된 루틴이 없습니다.</strong><small>트레이너와 다음 운동 계획을 만들어 보세요.</small></div></div>
+            <div class="card-heading">
+                <div><p>TODAY'S ROUTINE</p>
+                    <h2>오늘의 운동</h2></div>
+                <a href="/member/workouts">전체 루틴</a></div>
+            <div class="routine-title" th:if="${home.routine != null}"><span>TODAY</span>
+                <div><strong th:text="${home.routine.title}">하체 근력 강화</strong><small
+                        th:text="${home.exercises.isEmpty() ? '오늘 예정된 세부 운동이 없습니다.' : '운동 ' + home.exercises.size() + '종목'}">운동
+                    5종목</small></div>
+            </div>
+            <div class="routine-title" th:unless="${home.routine != null}"><span>REST</span>
+                <div><strong>활성화된 루틴이 없습니다.</strong><small>트레이너와 다음 운동 계획을 만들어 보세요.</small></div>
+            </div>
             <ul th:if="${!home.exercises.isEmpty()}">
-                <li th:each="exercise, status : ${home.exercises}"><span th:text="${#numbers.formatInteger(status.count, 2)}">01</span><div><strong th:text="${exercise.exerciseName}">백 스쿼트</strong><small th:text="${exercise.targetDescription()}">60kg · 4세트 · 8–10회</small></div><a th:href="@{/member/workouts(routineId=${home.routine.routineId})}">기록</a></li>
+                <li th:each="exercise, status : ${home.exercises}"><span
+                        th:text="${#numbers.formatInteger(status.count, 2)}">01</span>
+                    <div><strong th:text="${exercise.exerciseName}">백 스쿼트</strong><small
+                            th:text="${exercise.targetDescription()}">60kg · 4세트 · 8–10회</small></div>
+                    <a th:href="@{/member/workouts(routineId=${home.routine.routineId})}">기록</a></li>
             </ul>
-            <p class="empty-state" th:if="${home.routine != null and home.exercises.isEmpty()}">오늘은 회복에 집중하거나 자유 운동을 진행해 보세요.</p>
-            <a class="routine-start" th:href="@{/member/workouts(routineId=${home.routine.routineId})}" th:if="${!home.exercises.isEmpty()}">오늘 운동 시작하기</a>
+            <p class="empty-state" th:if="${home.routine != null and home.exercises.isEmpty()}">오늘은 회복에 집중하거나 자유 운동을 진행해
+                보세요.</p>
+            <a class="routine-start" th:href="@{/member/workouts(routineId=${home.routine.routineId})}"
+               th:if="${!home.exercises.isEmpty()}">오늘 운동 시작하기</a>
         </article>
 
         <aside class="member-side">
             <article class="member-card checkin">
-                <div class="card-heading"><div><p>ATTENDANCE</p><h2>오늘의 출석</h2></div></div>
-                <div class="checkin-state" th:if="${home.attendance != null}"><span>✓</span><div><strong th:text="|${#temporals.format(home.attendance.checkedInAt, 'HH:mm')} 체크인|">09:42 체크인</strong><small>현재 운동 중</small></div></div>
-                <div class="checkin-state" th:unless="${home.attendance != null}"><span>!</span><div><strong>아직 체크인하지 않았어요</strong><small>버튼을 눌러 오늘의 출석을 시작하세요.</small></div></div>
-                <form th:if="${home.attendance == null}" th:action="@{/member/attendance/check-in}" method="post"><button type="submit">체크인하기</button></form>
-                <form th:if="${home.attendance != null}" th:action="@{/member/attendance/check-out}" method="post"><button type="submit">체크아웃하기</button></form>
+                <div class="card-heading">
+                    <div><p>ATTENDANCE</p>
+                        <h2>오늘의 출석</h2></div>
+                </div>
+                <div class="checkin-state" th:if="${home.attendance != null}"><span>✓</span>
+                    <div><strong th:text="|${#temporals.format(home.attendance.checkedInAt, 'HH:mm')} 체크인|">09:42
+                        체크인</strong><small>퇴실할 때 센터 QR을 다시 촬영해 주세요.</small></div>
+                </div>
+                <div class="checkin-state" th:unless="${home.attendance != null}"><span>!</span>
+                    <div><strong>아직 체크인하지 않았어요</strong><small>센터에 표시된 QR을 휴대폰 카메라로 촬영해 주세요.</small></div>
+                </div>
+                <p class="checkin-guide" th:if="${home.attendance == null}">
+                    휴대폰에서 로그인한 뒤 센터 QR을 촬영하면 출석 확인 화면으로 이동합니다.
+                </p>
+                <p class="checkin-guide" th:if="${home.attendance != null}">
+                    현재 입실 중입니다. 체크아웃도 센터 QR 인증을 통해 진행합니다.
+                </p>
+                <a th:href="@{/member/attendance}">출석 이력 및 이용 방법</a>
             </article>
             <article class="member-card trainer">
-                <div class="card-heading"><div><p>MY TRAINER</p><h2>담당 트레이너</h2></div></div>
-                <div class="trainer-info" th:if="${home.trainer != null}"><span th:text="${#strings.substring(home.trainer.trainerName, 0, 1)}">김</span><div><strong th:text="|${home.trainer.trainerName} 트레이너|">김도윤 트레이너</strong><small th:text="${home.trainer.specialty ?: '전문 분야 미등록'}">근력 향상 · 자세 교정</small></div></div>
-                <div class="trainer-info" th:unless="${home.trainer != null}"><span>?</span><div><strong>배정된 트레이너가 없습니다.</strong><small>상담 신청 후 담당 트레이너를 배정받을 수 있어요.</small></div></div>
-                <blockquote th:if="${home.routine != null and home.routine.description != null}" th:text="|“${home.routine.description}”|">루틴 설명</blockquote>
+                <div class="card-heading">
+                    <div><p>MY TRAINER</p>
+                        <h2>담당 트레이너</h2></div>
+                </div>
+                <div class="trainer-info" th:if="${home.trainer != null}"><span
+                        th:text="${#strings.substring(home.trainer.trainerName, 0, 1)}">김</span>
+                    <div><strong th:text="|${home.trainer.trainerName} 트레이너|">김도윤 트레이너</strong><small
+                            th:text="${home.trainer.specialty ?: '전문 분야 미등록'}">근력 향상 · 자세 교정</small></div>
+                </div>
+                <div class="trainer-info" th:unless="${home.trainer != null}"><span>?</span>
+                    <div><strong>배정된 트레이너가 없습니다.</strong><small>상담 신청 후 담당 트레이너를 배정받을 수 있어요.</small></div>
+                </div>
+                <blockquote th:if="${home.routine != null and home.routine.description != null}"
+                            th:text="|“${home.routine.description}”|">루틴 설명
+                </blockquote>
             </article>
         </aside>
 
         <article class="member-card activity">
-            <div class="card-heading"><div><p>RECENT ACTIVITY</p><h2>최근 운동 기록</h2></div><a href="/member/workouts">기록 전체보기</a></div>
+            <div class="card-heading">
+                <div><p>RECENT ACTIVITY</p>
+                    <h2>최근 운동 기록</h2></div>
+                <a href="/member/workouts">기록 전체보기</a></div>
             <div class="activity-list" th:if="${!home.recentWorkouts.isEmpty()}">
-                <div th:each="workout : ${home.recentWorkouts}"><time th:text="${#temporals.format(workout.startedAt, 'MM.dd')}">07.28</time><span>운동</span><strong th:text="${workout.routineTitle}">근력 루틴</strong><small th:text="${workout.durationMinutes() == null ? '운동 ' + workout.exerciseCount + '종목 · 진행 중' : workout.durationMinutes() > 0 ? '운동 ' + workout.exerciseCount + '종목 · ' + workout.durationMinutes() + '분' : '운동 ' + workout.exerciseCount + '종목 · 시간 미기록'}">운동 6종목 · 63분</small><b th:text="${workout.endedAt != null ? '완료' : '진행 중'}">완료</b></div>
+                <div th:each="workout : ${home.recentWorkouts}">
+                    <time th:text="${#temporals.format(workout.startedAt, 'MM.dd')}">07.28</time>
+                    <span>운동</span><strong th:text="${workout.routineTitle}">근력 루틴</strong><small
+                        th:text="${workout.durationMinutes() == null ? '운동 ' + workout.exerciseCount + '종목 · 진행 중' : workout.durationMinutes() > 0 ? '운동 ' + workout.exerciseCount + '종목 · ' + workout.durationMinutes() + '분' : '운동 ' + workout.exerciseCount + '종목 · 시간 미기록'}">운동
+                    6종목 · 63분</small><b th:text="${workout.endedAt != null ? '완료' : '진행 중'}">완료</b></div>
             </div>
             <p class="empty-state" th:if="${home.recentWorkouts.isEmpty()}">아직 저장된 운동 기록이 없습니다.</p>
         </article>

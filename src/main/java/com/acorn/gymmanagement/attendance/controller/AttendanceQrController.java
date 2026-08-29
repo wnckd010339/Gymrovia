@@ -44,8 +44,8 @@ public class AttendanceQrController {
                     checkedIn
             );
             model.addAttribute(
-                    "verificationSeconds",
-                    attendanceQrService.verificationSeconds()
+                    "attendanceAction",
+                    checkedIn ? "CHECK_OUT" : "CHECK_IN"
             );
 
             return "member/attendance-qr";
@@ -75,7 +75,7 @@ public class AttendanceQrController {
 
             redirectAttributes.addFlashAttribute(
                     "message",
-                    "체크인이 완료되었습니다."
+                    "센터 QR 인증이 완료되어 체크인되었습니다."
             );
         } catch (BusinessException exception) {
             redirectAttributes.addFlashAttribute(
@@ -100,7 +100,7 @@ public class AttendanceQrController {
             );
             redirectAttributes.addFlashAttribute(
                     "message",
-                    "체크아웃이 완료되었습니다."
+                    "센터 QR 인증이 완료되어 체크아웃되었습니다."
             );
         } catch (BusinessException exception) {
             redirectAttributes.addFlashAttribute(

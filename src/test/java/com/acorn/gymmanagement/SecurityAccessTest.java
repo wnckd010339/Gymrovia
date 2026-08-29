@@ -3,6 +3,7 @@ package com.acorn.gymmanagement;
 import com.acorn.gymmanagement.dashboard.dto.response.DashboardResponse;
 import com.acorn.gymmanagement.dashboard.dto.response.DashboardSummaryResponse;
 import com.acorn.gymmanagement.dashboard.service.DashboardService;
+import com.acorn.gymmanagement.attendance.service.AttendanceQrService;
 import com.acorn.gymmanagement.attendance.service.AttendanceService;
 import com.acorn.gymmanagement.member.dto.response.MemberHomeSummaryResponse;
 import com.acorn.gymmanagement.member.dto.request.CreateMemberRequest;
@@ -64,6 +65,9 @@ class SecurityAccessTest {
 
     @MockitoBean
     private AttendanceService attendanceService;
+
+    @MockitoBean
+    private AttendanceQrService attendanceQrService;
 
     @MockitoBean
     private MemberPortalService memberPortalService;
@@ -282,6 +286,19 @@ class SecurityAccessTest {
     }
 
     @Test
+    void adminAttendanceQrPageProvidesCsrfTokenForIssueRequest() throws Exception {
+        mockMvc.perform(get("/admin/attendance/qr")
+                        .session(session(SessionUser.ROLE_ADMIN)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "name=\"_csrf\""
+                )))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "name=\"_csrf_header\""
+                )));
+    }
+
+    @Test
     void memberCanAccessMemberPortalPages() throws Exception {
         MockHttpSession memberSession = session(SessionUser.ROLE_MEMBER);
 
@@ -298,25 +315,48 @@ class SecurityAccessTest {
     }
 
     @Test
-    void memberCanCheckInUsingSessionUser() throws Exception {
+    void memberDirectCheckInEndpointDoesNotExist() throws Exception {
         mockMvc.perform(post("/member/attendance/check-in")
                         .with(csrf())
                         .session(session(SessionUser.ROLE_MEMBER)))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/member/home"));
+                .andExpect(status().isNotFound());
 
-        verify(attendanceService).checkInMember(1L);
+        verify(attendanceService, never()).checkInMember(
+                org.mockito.ArgumentMatchers.anyLong()
+        );
     }
 
     @Test
-    void memberCanCheckOutUsingSessionUser() throws Exception {
+    void memberDirectCheckOutEndpointDoesNotExist() throws Exception {
         mockMvc.perform(post("/member/attendance/check-out")
                         .with(csrf())
                         .session(session(SessionUser.ROLE_MEMBER)))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/member/home"));
+                .andExpect(status().isNotFound());
 
-        verify(attendanceService).checkoutMember(1L);
+        verify(attendanceService, never()).checkoutMember(
+                org.mockito.ArgumentMatchers.anyLong()
+        );
+    }
+
+    @Test
+    void memberQrPageRendersAutomaticCsrfProtectedCheckInForm() throws Exception {
+        when(attendanceQrService.verifyScan(1L, "center-token"))
+                .thenReturn("verification-token");
+        when(attendanceQrService.isCheckedIn(1L)).thenReturn(false);
+
+        mockMvc.perform(get("/member/attendance/qr")
+                        .param("token", "center-token")
+                        .session(session(SessionUser.ROLE_MEMBER)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "id=\"qr-attendance-form\""
+                )))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "/member/attendance/qr/check-in"
+                )))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "name=\"_csrf\""
+                )));
     }
 
     @Test

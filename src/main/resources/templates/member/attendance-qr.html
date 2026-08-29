@@ -1,36 +1,44 @@
 <!doctype html>
 <html lang="ko"
-       xmlns:th="http://www.thymeleaf.org">
+      xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="referrer" content="no-referrer">
-    <title>QR 출석 확인 | FitFlow</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <meta name="referrer"
+          content="no-referrer">
+
+    <title>QR 출석 처리 | FitFlow</title>
 
     <link rel="stylesheet"
           th:href="@{/css/layouts/member.css}"
-          href="/css/layouts/member.css"
-    >
+          href="/css/layouts/member.css">
+
     <link rel="stylesheet"
           th:href="@{/css/pages/member/attendance-qr.css}"
-          href="/css/pages/member/attendance-qr.css"
-    >
+          href="/css/pages/member/attendance-qr.css">
 </head>
 <body>
-<header th:replace="~{member/portal-fragments :: header('attendance')}"></header>
+
+<header th:replace="~{member/portal-fragments :: header('attendance')}">
+</header>
 
 <main class="portal-main qr-attendance-page">
     <p class="eyebrow">QR ATTENDANCE</p>
     <h1>QR 출석</h1>
+
     <p class="subtitle">
-        센터 QR 인증 후 버튼을 눌러 출석을 완료해 주세요.
+        센터 QR을 확인했습니다.
+        출석을 처리하고 있습니다.
     </p>
 
     <section
-        id="qr-verification"
-        class="qr-verification-card"
-        th:attr="data-seconds=${verificationSeconds}">
-        <div class="verification-icon" aria-hidden="true">
+            id="qr-verification"
+            class="qr-verification-card"
+            th:attr="data-action=${attendanceAction}">
+
+        <div class="verification-icon"
+             aria-hidden="true">
             ✓
         </div>
 
@@ -38,97 +46,72 @@
             센터 인증 완료
         </p>
 
-        <div th:if="${!checkedIn}">
-            <h2>현재 상태 : 입실 전</h2>
+        <div th:if="${attendanceAction == 'CHECK_IN'}">
+            <h2>체크인 처리 중</h2>
             <p class="verification-description">
-                체크인 버튼을 누르면 입실 시간이 기록됩니다.
+                입실 시간을 기록하고 있습니다.
             </p>
 
             <form
-                class="qr-attendance-form"
-                th:action="@{/member/attendance/qr/check-in}"
-                method="post"
-                >
-                <input type="hidden"
-                       name="verificationToken"
-                       th:value="${verificationToken}"
-                >
+                    id="qr-attendance-form"
+                    th:action="@{/member/attendance/qr/check-in}"
+                    method="post">
 
-                <button class="qr-action-button"
-                        type="submit"
-                >
-                    체크인하기
-                </button>
+                <input
+                        type="hidden"
+                        name="verificationToken"
+                        th:value="${verificationToken}">
             </form>
         </div>
 
-        <div th:if="${checkedIn}">
-            <h2>현재 상태 : 입실 중</h2>
+        <div th:if="${attendanceAction == 'CHECK_OUT'}">
+            <h2>체크아웃 처리 중</h2>
             <p class="verification-description">
-                체크아웃 버튼을 누르면 퇴실 시간이 기록됩니다.
+                퇴실 시간을 기록하고 있습니다.
             </p>
 
-            <form class="qr-attendance-form"
-                  th:action="@{/member/attendance/qr/check-out}"
-                  method="post"
-            >
-                <input type="hidden"
-                       name="verificationToken"
-                       th:value="${verificationToken}"
-                >
+            <form
+                    id="qr-attendance-form"
+                    th:action="@{/member/attendance/qr/check-out}"
+                    method="post">
 
-                <button
-                    class="qr-action-button checkout"
-                    type="submit"
-                >
-                    체크아웃하기
-                </button>
+                <input
+                        type="hidden"
+                        name="verificationToken"
+                        th:value="${verificationToken}">
             </form>
         </div>
 
-        <div class="verification-timer">
-            <span>인증 유효시간</span>
-            <strong id="verification-countdown">
-                02:00
-            </strong>
+        <div class="qr-processing-indicator"
+             aria-live="polite">
+            <span class="qr-processing-spinner"
+                  aria-hidden="true"></span>
+            <strong>잠시만 기다려 주세요.</strong>
         </div>
 
-        <p
-            id="verification-expired-message"
-            class="verification-expired-message"
-            hidden
-        >
-            QR 인증 시간이 만료되었습니다.
-            센터 QR을 다시 스캔해 주세요.
-        </p>
+        <noscript>
+            <p class="verification-expired-message">
+                자동 출석 처리를 위해 JavaScript가 필요합니다.
+            </p>
+        </noscript>
     </section>
 
     <section class="portal-card qr-guide-card">
-        <h2>이용 안내</h2>
+        <h2>처리 안내</h2>
 
         <ul>
-            <li>
-                QR 스캔만으로 출석이 저장되지는 않습니다.
-            </li>
-            <li>
-                체크인 또는 체크아웃 버튼을 눌러야 기록됩니다.
-            </li>
-            <li>
-                인증권은 한 번만 사용할 수 있습니다.
-            </li>
-            <li>
-                인증 시간이 지나면 센터 QR을 다시 스캔해야 됩니다.
-            </li>
+            <li>QR 인증은 한 번만 사용할 수 있습니다.</li>
+            <li>처리가 끝나면 출석 이력 화면으로 이동합니다.</li>
+            <li>오류가 발생하면 센터 QR을 다시 촬영해 주세요.</li>
         </ul>
-
-        <a class="attendance-history-link" th:href="@{/member/attendance}">
-            출석 이력으로 돌아가기
-        </a>
     </section>
 </main>
 
-<script defer
+<script
+        defer
         th:src="@{/js/screens/member-attendance-qr.js}"
-        src="/js/screens/member-attendance-qr.js"></script>
+        src="/js/screens/member-attendance-qr.js">
+</script>
+
 </body>
 </html>

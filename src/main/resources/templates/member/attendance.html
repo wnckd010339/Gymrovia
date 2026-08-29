@@ -12,24 +12,29 @@
     <main class="portal-main">
         <p class="eyebrow">ATTENDANCE</p>
         <h1>출석</h1>
-        <p class="subtitle">버튼 또는 센터 QR 인증으로 입실·퇴실을 기록합니다.</p>
+        <p class="subtitle">센터에 표시된 QR을 휴대폰 카메라로 촬영해 입실·퇴실을 기록합니다.</p>
         <p class="notice" th:if="${message}" th:text="${message}"></p>
         <p class="notice error" th:if="${errorMessage}" th:text="${errorMessage}"></p>
 
     <section class="attendance-hero">
         <div th:if="${#lists.isEmpty(attendances) or attendances[0].attendanceDate != #temporals.createToday()}">
                 <h2>오늘 아직 입실하지 않았어요</h2>
-                <p>활성 회원권이 확인되면 체크인할 수 있습니다.</p>
-                <form th:action="@{/member/attendance/check-in}" method="post">
-                    <input type="hidden" name="redirect" value="/member/attendance">
-                    <button>체크인하기</button></form></div><div th:if="${!#lists.isEmpty(attendances) and attendances[0].attendanceDate == #temporals.createToday() and attendances[0].checkedOutAt == null}">
+                <p>휴대폰에서 회원 계정으로 로그인한 뒤 센터 출석 QR을 촬영해 주세요.</p>
+                <div class="qr-attendance-guide">
+                    <strong>QR 체크인 방법</strong>
+                    <ol>
+                        <li>휴대폰 브라우저에서 FitFlow 회원 계정으로 로그인합니다.</li>
+                        <li>휴대폰 기본 카메라로 관리자 화면의 센터 QR을 촬영합니다.</li>
+                        <li>QR 출석 확인 화면에서 체크인 절차를 완료합니다.</li>
+                    </ol>
+                </div>
+            </div><div th:if="${!#lists.isEmpty(attendances) and attendances[0].attendanceDate == #temporals.createToday() and attendances[0].checkedOutAt == null}">
             <h2 th:text="|${#temporals.format(attendances[0].checkedInAt, 'HH:mm')}에 체크인했어요|">체크인</h2>
-            <p>운동이 끝나면 체크아웃해 주세요.</p>
-
-            <form th:action="@{/member/attendance/check-out}" method="post">
-                <input type="hidden" name="redirect" value="/member/attendance">
-                <button>체크아웃하기</button>
-            </form>
+            <p>운동이 끝나면 센터 QR을 다시 촬영해 체크아웃해 주세요.</p>
+            <div class="qr-attendance-guide compact">
+                <strong>현재 입실 중</strong>
+                <span>체크아웃도 센터 QR 인증 후 처리됩니다.</span>
+            </div>
         </div>
 
         <div th:if="${!#lists.isEmpty(attendances) and attendances[0].attendanceDate == #temporals.createToday() and attendances[0].checkedOutAt != null}">

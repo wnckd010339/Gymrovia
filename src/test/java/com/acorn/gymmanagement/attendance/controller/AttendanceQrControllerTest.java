@@ -33,10 +33,9 @@ class AttendanceQrControllerTest {
     }
 
     @Test
-    void validScanRendersConfirmationWithCurrentAttendanceState() {
+    void validScanForCheckedInMemberProvidesCheckOutAction() {
         when(attendanceQrService.verifyScan(10L, "center-token")).thenReturn("verification-token");
         when(attendanceQrService.isCheckedIn(10L)).thenReturn(true);
-        when(attendanceQrService.verificationSeconds()).thenReturn(120L);
         ConcurrentModel model = new ConcurrentModel();
 
         String view = controller.verifyQr(
@@ -49,7 +48,26 @@ class AttendanceQrControllerTest {
         assertEquals("member/attendance-qr", view);
         assertEquals("verification-token", model.getAttribute("verificationToken"));
         assertEquals(true, model.getAttribute("checkedIn"));
-        assertEquals(120L, model.getAttribute("verificationSeconds"));
+        assertEquals("CHECK_OUT", model.getAttribute("attendanceAction"));
+    }
+
+    @Test
+    void validScanForUncheckedMemberProvidesCheckInAction() {
+        when(attendanceQrService.verifyScan(10L, "center-token")).thenReturn("verification-token");
+        when(attendanceQrService.isCheckedIn(10L)).thenReturn(false);
+        ConcurrentModel model = new ConcurrentModel();
+
+        String view = controller.verifyQr(
+                member,
+                "center-token",
+                model,
+                new RedirectAttributesModelMap()
+        );
+
+        assertEquals("member/attendance-qr", view);
+        assertEquals("verification-token", model.getAttribute("verificationToken"));
+        assertEquals(false, model.getAttribute("checkedIn"));
+        assertEquals("CHECK_IN", model.getAttribute("attendanceAction"));
     }
 
     @Test
@@ -76,7 +94,10 @@ class AttendanceQrControllerTest {
         String view = controller.checkIn(member, "verification-token", redirect);
 
         assertEquals("redirect:/member/attendance", view);
-        assertEquals("체크인이 완료되었습니다.", redirect.getFlashAttributes().get("message"));
+        assertEquals(
+                "센터 QR 인증이 완료되어 체크인되었습니다.",
+                redirect.getFlashAttributes().get("message")
+        );
         verify(attendanceQrService).checkIn(10L, "verification-token");
     }
 
