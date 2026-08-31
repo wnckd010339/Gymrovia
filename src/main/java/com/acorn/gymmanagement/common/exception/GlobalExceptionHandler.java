@@ -1,6 +1,7 @@
 package com.acorn.gymmanagement.common.exception;
 
 import com.acorn.gymmanagement.common.response.ApiResponse;
+import com.acorn.gymmanagement.payment.gateway.PaymentGatewayException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -33,5 +34,18 @@ public class GlobalExceptionHandler {
         };
         return ResponseEntity.status(status)
                 .body(ApiResponse.failure(exception.getMessage(), exception.getErrorCode().name(), exception.getMessage()));
+    }
+
+    @ExceptionHandler(PaymentGatewayException.class)
+    public ResponseEntity<ApiResponse<Void>> handlePaymentGateway(
+            PaymentGatewayException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_GATEWAY)
+                .body(ApiResponse.failure(
+                        exception.getMessage(),
+                        exception.getCode(),
+                        exception.getMessage()
+                ));
     }
 }

@@ -9,6 +9,7 @@ import com.acorn.gymmanagement.mypage.service.MemberPortalService;
 import com.acorn.gymmanagement.mypage.service.MemberPasswordService;
 import com.acorn.gymmanagement.mypage.service.MemberWorkoutService;
 import com.acorn.gymmanagement.common.exception.BusinessException;
+import com.acorn.gymmanagement.payment.gateway.toss.TossPaymentProperties;
 import com.acorn.gymmanagement.security.SessionUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,30 +30,84 @@ public class MemberPortalController {
     private final MembershipService membershipService;
     private final MemberPasswordService memberPasswordService;
     private final MemberWorkoutService memberWorkoutService;
+    private final TossPaymentProperties tossPaymentProperties;
 
     @GetMapping("/memberships")
-    public String memberships(@SessionAttribute(SessionUser.SESSION_KEY) SessionUser user, Model model) {
-        model.addAttribute("memberships", memberPortalService.memberships(user.userId()));
-        model.addAttribute("membershipProducts", membershipService.findActiveProducts());
+    public String memberships(
+            @SessionAttribute(SessionUser.SESSION_KEY)
+            SessionUser user,
+            Model model
+    ) {
+        model.addAttribute(
+                "memberships",
+                memberPortalService.memberships(user.userId())
+        );
+
+        model.addAttribute(
+                "membershipProducts",
+                membershipService.findActiveProducts()
+        );
+
+        model.addAttribute(
+                "tossClientKey",
+                tossPaymentProperties.clientKey()
+        );
+
+        model.addAttribute(
+                "tossSuccessUrl",
+                tossPaymentProperties.successUrl()
+        );
+
+        model.addAttribute(
+                "tossFailUrl",
+                tossPaymentProperties.failUrl()
+        );
+
         return "member/memberships";
     }
 
     @GetMapping("/attendance")
-    public String attendance(@SessionAttribute(SessionUser.SESSION_KEY) SessionUser user, Model model) {
-        model.addAttribute("attendances", memberPortalService.attendances(user.userId()));
+    public String attendance(
+            @SessionAttribute(SessionUser.SESSION_KEY)
+            SessionUser user,
+            Model model
+    ) {
+        model.addAttribute(
+                "attendances",
+                memberPortalService.attendances(user.userId())
+        );
+
         return "member/attendance";
     }
 
     @GetMapping("/workouts")
-    public String workouts(@SessionAttribute(SessionUser.SESSION_KEY) SessionUser user,
-                           @RequestParam(required = false) Long routineId,
-                           Model model) {
+    public String workouts(
+            @SessionAttribute(SessionUser.SESSION_KEY)
+            SessionUser user,
+            @RequestParam(required = false) Long routineId,
+            Model model
+    ) {
         var routine = memberWorkoutService.routine(user.userId());
-        model.addAttribute("routine", routine);
-        model.addAttribute("workoutDays", memberWorkoutService.workoutDays(user.userId()));
-        Long activeRoutineId = routine.stream().findFirst().map(item -> item.routineId()).orElse(null);
-        Long selectedRoutineId = routineId != null && routine.stream().anyMatch(item -> routineId.equals(item.routineId()))
-                ? routineId : activeRoutineId;
+        model.addAttribute(
+                "routine",
+                routine
+        );
+
+        model.addAttribute(
+                "workoutDays",
+                memberWorkoutService.workoutDays(user.userId())
+        );
+
+        Long activeRoutineId =
+                routine.stream().findFirst()
+                        .map(item
+                                -> item.routineId()).orElse(null);
+
+        Long selectedRoutineId =
+                routineId != null && routine.stream()
+                        .anyMatch(item -> routineId.equals(item.routineId()))
+                        ? routineId : activeRoutineId;
+
         List<WorkoutExerciseForm> initialExercises = selectedRoutineId == null
                 ? List.of(new WorkoutExerciseForm("", 3, null, null))
                 : routine.stream()
@@ -61,6 +116,7 @@ public class MemberPortalController {
                             item.exerciseName(), item.targetSets() == null ? 3 : item.targetSets(),
                             item.targetWeight(), item.targetRepsMin()))
                     .toList();
+
         if (initialExercises.isEmpty()) {
             initialExercises = List.of(new WorkoutExerciseForm("", 3, null, null));
         }
@@ -71,39 +127,78 @@ public class MemberPortalController {
     }
 
     @PostMapping("/workouts")
-    public String saveWorkout(@SessionAttribute(SessionUser.SESSION_KEY) SessionUser user,
-                              @Valid @ModelAttribute WorkoutRecordForm workoutRecordForm, BindingResult bindingResult,
-                              RedirectAttributes redirectAttributes, Model model) {
+    public String saveWorkout(
+            @SessionAttribute(SessionUser.SESSION_KEY)
+            SessionUser user,
+            @Valid @ModelAttribute WorkoutRecordForm workoutRecordForm, BindingResult bindingResult,
+            RedirectAttributes redirectAttributes,
+            Model model
+    ) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("routine", memberWorkoutService.routine(user.userId()));
-            model.addAttribute("workoutDays", memberWorkoutService.workoutDays(user.userId()));
+            model.addAttribute(
+                    "routine",
+                    memberWorkoutService.routine(user.userId())
+            );
+
+            model.addAttribute(
+                    "workoutDays",
+                    memberWorkoutService.workoutDays(user.userId())
+            );
+
             return "member/workouts";
         }
+
         memberWorkoutService.save(user.userId(), workoutRecordForm);
-        redirectAttributes.addFlashAttribute("message", "운동 기록을 저장했습니다.");
+        redirectAttributes.addFlashAttribute(
+                "message",
+                "운동 기록을 저장했습니다."
+        );
+
         return "redirect:/member/workouts";
     }
 
     @GetMapping("/workouts/{sessionId}/edit")
-    public String editWorkout(@SessionAttribute(SessionUser.SESSION_KEY) SessionUser user,
-                              @PathVariable Long sessionId, Model model) {
-        var workout = memberWorkoutService.workoutForEdit(user.userId(), sessionId);
-        var exercises = memberWorkoutService.workoutExercises(user.userId(), sessionId).stream()
+    public String editWorkout(
+            @SessionAttribute(SessionUser.SESSION_KEY)
+            SessionUser user,
+            @PathVariable Long sessionId,
+            Model model
+    ) {
+        var workout =
+                memberWorkoutService.workoutForEdit(user.userId(), sessionId);
+        var exercises =
+                memberWorkoutService.workoutExercises(user.userId(), sessionId).stream()
                 .map(exercise -> new WorkoutExerciseForm(exercise.exerciseName(), exercise.sets(), exercise.weight(), exercise.reps()))
                 .toList();
-        model.addAttribute("workoutRecordForm", new WorkoutRecordForm(
-                workout.routineId(), workout.durationMinutes(), workout.memo(), exercises
-        ));
-        model.addAttribute("sessionId", sessionId);
+
+        model.addAttribute(
+                "workoutRecordForm",
+                new WorkoutRecordForm(
+                    workout.routineId(), workout.durationMinutes(), workout.memo(), exercises
+                ));
+
+        model.addAttribute(
+                "sessionId",
+                sessionId
+        );
+
         return "member/workout-edit";
     }
 
     @PostMapping("/workouts/{sessionId}")
-    public String updateWorkout(@SessionAttribute(SessionUser.SESSION_KEY) SessionUser user, @PathVariable Long sessionId,
-                                @Valid @ModelAttribute WorkoutRecordForm workoutRecordForm, BindingResult bindingResult,
-                                Model model, RedirectAttributes redirectAttributes) {
+    public String updateWorkout(
+            @SessionAttribute(SessionUser.SESSION_KEY)
+            SessionUser user,
+            @PathVariable Long sessionId,
+            @Valid @ModelAttribute WorkoutRecordForm workoutRecordForm, BindingResult bindingResult,
+            Model model,
+            RedirectAttributes redirectAttributes
+    ) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("sessionId", sessionId);
+            model.addAttribute(
+                    "sessionId", sessionId
+            );
+
             return "member/workout-edit";
         }
         memberWorkoutService.update(user.userId(), sessionId, workoutRecordForm);
@@ -194,5 +289,15 @@ public class MemberPortalController {
         memberPortalService.updateProfile(user.userId(), memberProfileForm);
         redirectAttributes.addFlashAttribute("message", "내 정보가 수정되었습니다.");
         return "redirect:/member/profile";
+    }
+
+    @GetMapping("/payments/success")
+    public String paymentSuccess() {
+        return "member/payment-success";
+    }
+
+    @GetMapping("/payments/fail")
+    public String paymentFail() {
+        return "member/payment-fail";
     }
 }

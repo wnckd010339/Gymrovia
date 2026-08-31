@@ -5,10 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="_csrf" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <meta name="toss-client-key"
+          th:content="${tossClientKey}">
+
+    <meta name="toss-success-url"
+          th:content="${tossSuccessUrl}">
+
+    <meta name="toss-fail-url"
+          th:content="${tossFailUrl}">
+
     <title>내 회원권 | FitFlow</title>
-    <link rel="stylesheet" th:href="@{/css/layouts/member.css}">
-    <link rel="stylesheet" th:href="@{/css/pages/member/membership-order.css(v=2)}">
-    <script defer th:src="@{/js/screens/member-membership-order.js}"></script>
+    <link rel="stylesheet"
+          th:href="@{/css/layouts/member.css}">
+    <link rel="stylesheet"
+          th:href="@{/css/pages/member/membership-order.css(v=2)}">
+
+    <script src="https://js.tosspayments.com/v2/standard"></script>
+    <script defer
+            th:src="@{/js/screens/member-membership-order.js}">
+    </script>
 </head>
 <body>
 <header th:replace="~{member/portal-fragments :: header('memberships')}"></header>
@@ -19,7 +34,8 @@
 
     <section class="portal-card membership-order-section" aria-labelledby="membership-order-title">
         <div class="section-heading">
-            <div><p class="eyebrow">NEW MEMBERSHIP</p><h2 id="membership-order-title">회원권 구매 준비</h2></div>
+            <div><p class="eyebrow">NEW MEMBERSHIP</p>
+                <h2 id="membership-order-title">회원권 구매 준비</h2></div>
             <span class="order-step">1단계 · 주문 생성</span>
         </div>
         <form id="membership-order-form" class="membership-order-form">
@@ -41,21 +57,31 @@
                 <div><span>이용 기간</span><strong data-order-duration>-</strong></div>
                 <div><span>주문 금액</span><strong data-order-price>-</strong></div>
             </aside>
-            <p class="order-guide">주문 생성 후 회원권은 결제 대기 상태로 등록됩니다. 현재 화면에서는 실제 결제가 진행되지 않습니다.</p>
+            <p class="order-guide">
+                토스페이먼츠 테스트 환경에서 카드 결제를 진행합니다.
+                실제 금액은 청구되지 않습니다.
+            </p>
             <p id="membership-order-message" class="order-message" role="status" aria-live="polite"></p>
             <button id="membership-order-submit" class="primary-action" type="submit"
-                    th:disabled="${#lists.isEmpty(membershipProducts)}">결제 주문 만들기</button>
+                    th:disabled="${#lists.isEmpty(membershipProducts)}">결제 주문 만들기
+            </button>
             <p class="empty" th:if="${#lists.isEmpty(membershipProducts)}">현재 구매 가능한 회원권 상품이 없습니다.</p>
         </form>
         <div id="membership-order-result" class="order-result" hidden>
             <span data-result-status>결제 대기 주문이 생성되었습니다.</span>
             <strong data-result-order-id></strong>
             <p><b data-result-order-name></b> · <b data-result-amount></b></p>
-            <small>주문 유효시간: <time data-result-expires-at></time>까지</small>
+            <small>주문 유효시간:
+                <time data-result-expires-at></time>
+                까지</small>
             <small class="order-countdown">남은 시간 <b data-result-countdown>10:00</b></small>
-            <label class="demo-payment-method"><span>결제 수단</span><select data-result-payment-method><option value="CARD">카드</option><option value="CASH">현금</option><option value="TRANSFER">계좌이체</option></select></label>
-            <button class="primary-action" type="button" data-confirm-order>데모 결제 완료</button>
-            <a th:href="@{/member/memberships}">내 회원권 새로고침</a>
+
+            <button class="primary-action" type="button" data-confirm-order>
+                테스트 카드 결제
+            </button>
+            <a th:href="@{/member/memberships}">
+                내 회원권 새로고침
+            </a>
         </div>
     </section>
 
@@ -64,7 +90,9 @@
         <div class="card-grid">
             <article class="portal-card membership" th:each="membership : ${memberships}">
                 <div class="card-top">
-                    <span th:switch="${membership.productType}"><span th:case="'GYM'">헬스</span><span th:case="'PT'">PT</span><span th:case="'COMBINED'">헬스 + PT</span><span th:case="*" th:text="${membership.productType}"></span></span>
+                    <span th:switch="${membership.productType}"><span th:case="'GYM'">헬스</span><span
+                            th:case="'PT'">PT</span><span th:case="'COMBINED'">헬스 + PT</span><span th:case="*"
+                                                                                                   th:text="${membership.productType}"></span></span>
                     <b th:classappend="${'status-' + #strings.toLowerCase(membership.status)}"
                        th:switch="${membership.status}">
                         <span th:case="'PENDING_PAYMENT'">결제 대기</span>
@@ -76,9 +104,12 @@
                     </b>
                 </div>
                 <h2 th:text="${membership.productName}">3개월 자유 이용권</h2>
-                <p th:text="|${#temporals.format(membership.startDate, 'yyyy.MM.dd')} ~ ${#temporals.format(membership.endDate, 'yyyy.MM.dd')}|">기간</p>
-                <strong th:if="${membership.remainingDays != null}" th:text="|D-${membership.remainingDays}|">D-12</strong>
-                <small th:if="${membership.remainingPtSessions > 0}" th:text="|잔여 PT ${membership.remainingPtSessions}회|">잔여 PT</small>
+                <p th:text="|${#temporals.format(membership.startDate, 'yyyy.MM.dd')} ~ ${#temporals.format(membership.endDate, 'yyyy.MM.dd')}|">
+                    기간</p>
+                <strong th:if="${membership.remainingDays != null}"
+                        th:text="|D-${membership.remainingDays}|">D-12</strong>
+                <small th:if="${membership.remainingPtSessions > 0}"
+                       th:text="|잔여 PT ${membership.remainingPtSessions}회|">잔여 PT</small>
             </article>
             <p class="empty" th:if="${#lists.isEmpty(memberships)}">등록된 회원권이 없습니다.</p>
         </div>

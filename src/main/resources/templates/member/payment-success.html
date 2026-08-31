@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko"
+        xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <meta name="_csrf"
+            th:content="${_csrf.token}">
+    <meta name="_csrf_header"
+            th:content="${_csrf.headerName}">
+
+    <title>결제 확인 | FitFlow</title>
+
+    <link rel="stylesheet"
+            th:href="@{/css/layouts/member.css}">
+    <link rel="stylesheet"
+            th:href="@{/css/pages/member/membership-order.css(v=2)}">
+
+    <script defer
+            th:src="@{/js/screens/member-payment-success.js}">
+    </script>
+</head>
+<body>
+<header th:replace="~{member/portal-fragments :: header('memberships')}">
+</header>
+
+<main class="portal-main">
+    <section class="portal-card">
+        <p class="eyebrow">PAYMENT</p>
+        <h1>결제를 확인하고 있습니다.</h1>
+
+        <p id="payment-result"
+            role="status"
+            aria-live="polite">
+            결제 승인 결과를 확인하고 있습니다.
+            잠시만 기다려 주세요.
+        </p>
+
+        <div id="payment-complete-actions"
+             hidden>
+            <a class="primary-action"
+               th:href="@{/member/memberships}">
+                내 회원권 확인
+            </a>
+
+            <a th:href="@{/member/payments}">
+                결제 내역 확인
+            </a>
+        </div>
+
+        <div id="payment-retry-actions"
+             hidden>
+            <a class="primary-action"
+               th:href="@{/member/memberships}">
+                다시 결제하기
+            </a>
+        </div>
+    </section>
+</main>
+</body>
+</html>

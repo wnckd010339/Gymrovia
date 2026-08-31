@@ -6,13 +6,15 @@ import com.acorn.gymmanagement.membership.model.PendingMembershipPaymentTarget;
 import com.acorn.gymmanagement.membership.service.MembershipService;
 import com.acorn.gymmanagement.payment.dto.request.CreateMemberPaymentOrderRequest;
 import com.acorn.gymmanagement.payment.dto.request.ConfirmMemberPaymentOrderRequest;
-import com.acorn.gymmanagement.payment.dto.request.CreatePaymentRequest;
 import com.acorn.gymmanagement.payment.dto.response.MemberPaymentConfirmationResponse;
-import com.acorn.gymmanagement.payment.dto.response.PaymentResponse;
 import com.acorn.gymmanagement.payment.dto.response.PaymentOrderResponse;
 import com.acorn.gymmanagement.payment.mapper.PaymentOrderMapper;
 import com.acorn.gymmanagement.payment.model.PaymentOrderRegistration;
 import com.acorn.gymmanagement.payment.model.PaymentOrderStatus;
+import com.acorn.gymmanagement.payment.gateway.PaymentApprovalResult;
+import com.acorn.gymmanagement.payment.gateway.PaymentGateway;
+import com.acorn.gymmanagement.payment.gateway.PaymentGatewayException;
+import com.acorn.gymmanagement.payment.model.PaymentApprovalCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +25,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class MemberPaymentOrderService {
 
     private static final Duration ORDER_EXPIRATION = Duration.ofMinutes(10);
@@ -34,7 +35,8 @@ public class MemberPaymentOrderService {
     private final MembershipService membershipService;
     private final PaymentOrderMapper paymentOrderMapper;
     private final PaymentOrderExpirationService paymentOrderExpirationService;
-    private final PaymentService paymentService;
+    private final PaymentGateway paymentGateway;
+    private final PaymentOrderTransactionService transactionService;
 
     @Transactional
     public PaymentOrderResponse create(
@@ -95,43 +97,52 @@ public class MemberPaymentOrderService {
                 .replace("-", "");
     }
 
-    @Transactional
     public MemberPaymentConfirmationResponse confirm(
             Long userId,
             String orderId,
             ConfirmMemberPaymentOrderRequest request
     ) {
-        var order = paymentOrderMapper.findByOrderIdForUpdate(orderId, userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "결제 주문을 찾을 수 없습니다."));
+       PaymentApprovalCommand command =
+               transactionService.prepareApproval(
+                       userId,
+                       orderId,
+                       request.paymentKey(),
+                       request.amount()
+               );
 
-        if (order.status() != PaymentOrderStatus.READY) {
-            throw new BusinessException(ErrorCode.CONFLICT, "결제 대기 상태의 주문만 완료할 수 있습니다.");
-        }
-        if (order.expiresAt().isBefore(LocalDateTime.now())) {
-            throw new BusinessException(ErrorCode.CONFLICT, "결제 주문의 유효시간이 만료되었습니다.");
-        }
-        if (order.amount().compareTo(request.amount()) != 0) {
-            throw new BusinessException(ErrorCode.CONFLICT, "주문 금액과 결제 금액이 일치하지 않습니다.");
-        }
+       try {
+           PaymentApprovalResult result =
+                   paymentGateway.confirm(
+                           command.paymentKey(),
+                           command.orderId(),
+                           command.amount(),
+                           command.idempotencyKey()
+                   );
 
-        String localPaymentKey = "LOCAL-" + order.orderId();
-        if (paymentOrderMapper.markApproving(order.id(), localPaymentKey) != 1) {
-            throw new BusinessException(ErrorCode.CONFLICT, "결제 주문 상태가 변경되어 처리하지 못했습니다.");
-        }
+           return  transactionService.completeApproval(
+                   command,
+                   result
+           );
+       } catch (PaymentGatewayException exception) {
+           transactionService.failApproval(
+                   command.paymentOrderId(),
+                   exception.getCode(),
+                   exception.getMessage()
+           );
 
-        PaymentResponse payment = paymentService.completeMembershipPayment(
-                order.membershipId(),
-                new CreatePaymentRequest(order.membershipId(), request.paymentMethod())
-        );
-        LocalDateTime approvedAt = LocalDateTime.now();
-        if (paymentOrderMapper.markPaid(order.id(), payment.paymentId(), approvedAt) != 1) {
-            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "결제 주문 완료 상태를 저장하지 못했습니다.");
-        }
+           throw exception;
+       } catch (RuntimeException exception) {
+           transactionService.failApproval(
+                   command.paymentOrderId(),
+                   "INTERNAL_APPROVAL_ERROR",
+                   "결제 승인 결과를 처리하지 못했습니다."
+           );
 
-        return new MemberPaymentConfirmationResponse(
-                order.orderId(), payment.paymentId(), order.amount(), request.paymentMethod(), approvedAt
-        );
+           throw exception;
+       }
+
     }
+
 
 
 

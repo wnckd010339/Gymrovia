@@ -1,14 +1,16 @@
 package com.acorn.gymmanagement.payment.service;
 
 import com.acorn.gymmanagement.common.exception.BusinessException;
+import com.acorn.gymmanagement.common.exception.ErrorCode;
 import com.acorn.gymmanagement.membership.service.MembershipService;
 import com.acorn.gymmanagement.payment.dto.request.ConfirmMemberPaymentOrderRequest;
-import com.acorn.gymmanagement.payment.dto.response.PaymentResponse;
+import com.acorn.gymmanagement.payment.dto.response.MemberPaymentConfirmationResponse;
+import com.acorn.gymmanagement.payment.gateway.PaymentApprovalResult;
+import com.acorn.gymmanagement.payment.gateway.PaymentGateway;
+import com.acorn.gymmanagement.payment.gateway.PaymentGatewayException;
 import com.acorn.gymmanagement.payment.mapper.PaymentOrderMapper;
+import com.acorn.gymmanagement.payment.model.PaymentApprovalCommand;
 import com.acorn.gymmanagement.payment.model.PaymentMethod;
-import com.acorn.gymmanagement.payment.model.PaymentOrder;
-import com.acorn.gymmanagement.payment.model.PaymentOrderStatus;
-import com.acorn.gymmanagement.payment.model.PaymentStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,60 +19,323 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MemberPaymentOrderServiceTest {
-    @Mock MembershipService membershipService;
-    @Mock PaymentOrderMapper paymentOrderMapper;
-    @Mock PaymentOrderExpirationService expirationService;
-    @Mock PaymentService paymentService;
-    MemberPaymentOrderService service;
 
-    @BeforeEach void setUp() {
-        service = new MemberPaymentOrderService(membershipService, paymentOrderMapper, expirationService, paymentService);
+    private static final Long USER_ID = 10L;
+    private static final Long PAYMENT_ORDER_ID = 1L;
+    private static final Long MEMBERSHIP_ID = 30L;
+    private static final Long PAYMENT_ID = 40L;
+
+    private static final String ORDER_ID = "ORDER-1";
+    private static final String PAYMENT_KEY =
+            "test-payment-key";
+    private static final String IDEMPOTENCY_KEY =
+            "test-idempotency-key";
+
+    private static final BigDecimal AMOUNT =
+            new BigDecimal("100000");
+
+    @Mock
+    private MembershipService membershipService;
+
+    @Mock
+    private PaymentOrderMapper paymentOrderMapper;
+
+    @Mock
+    private PaymentOrderExpirationService expirationService;
+
+    @Mock
+    private PaymentGateway paymentGateway;
+
+    @Mock
+    private PaymentOrderTransactionService transactionService;
+
+    private MemberPaymentOrderService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new MemberPaymentOrderService(
+                membershipService,
+                paymentOrderMapper,
+                expirationService,
+                paymentGateway,
+                transactionService
+        );
     }
 
-    @Test void confirmsOwnedReadyOrderAndMarksItPaid() {
-        PaymentOrder order = order(PaymentOrderStatus.READY, LocalDateTime.now().plusMinutes(5));
-        when(paymentOrderMapper.findByOrderIdForUpdate("ORDER-1", 10L)).thenReturn(Optional.of(order));
-        when(paymentOrderMapper.markApproving(1L, "LOCAL-ORDER-1")).thenReturn(1);
-        when(paymentService.completeMembershipPayment(eq(30L), any())).thenReturn(payment());
-        when(paymentOrderMapper.markPaid(eq(1L), eq(40L), any())).thenReturn(1);
+    @Test
+    void confirmsPaymentAndCompletesApproval() {
+        PaymentApprovalCommand command =
+                approvalCommand();
 
-        var result = service.confirm(10L, "ORDER-1", new ConfirmMemberPaymentOrderRequest(new BigDecimal("100000"), PaymentMethod.CARD));
+        PaymentApprovalResult gatewayResult =
+                approvalResult();
 
-        assertEquals(40L, result.paymentId());
-        verify(paymentOrderMapper).markPaid(eq(1L), eq(40L), any());
+        MemberPaymentConfirmationResponse expected =
+                confirmationResponse();
+
+        when(transactionService.prepareApproval(
+                USER_ID,
+                ORDER_ID,
+                PAYMENT_KEY,
+                AMOUNT
+        )).thenReturn(command);
+
+        when(paymentGateway.confirm(
+                PAYMENT_KEY,
+                ORDER_ID,
+                AMOUNT,
+                IDEMPOTENCY_KEY
+        )).thenReturn(gatewayResult);
+
+        when(transactionService.completeApproval(
+                command,
+                gatewayResult
+        )).thenReturn(expected);
+
+        MemberPaymentConfirmationResponse actual =
+                service.confirm(
+                        USER_ID,
+                        ORDER_ID,
+                        confirmRequest()
+                );
+
+        assertSame(expected, actual);
+        assertEquals(PAYMENT_ID, actual.paymentId());
+        assertEquals(PaymentMethod.CARD, actual.paymentMethod());
+
+        verify(transactionService).prepareApproval(
+                USER_ID,
+                ORDER_ID,
+                PAYMENT_KEY,
+                AMOUNT
+        );
+
+        verify(paymentGateway).confirm(
+                PAYMENT_KEY,
+                ORDER_ID,
+                AMOUNT,
+                IDEMPOTENCY_KEY
+        );
+
+        verify(transactionService).completeApproval(
+                command,
+                gatewayResult
+        );
+
+        verify(
+                transactionService,
+                never()
+        ).failApproval(
+                PAYMENT_ORDER_ID,
+                "INTERNAL_APPROVAL_ERROR",
+                "결제 승인 결과를 처리하지 못했습니다."
+        );
     }
 
-    @Test void rejectsAmountMismatchBeforePayment() {
-        when(paymentOrderMapper.findByOrderIdForUpdate("ORDER-1", 10L))
-                .thenReturn(Optional.of(order(PaymentOrderStatus.READY, LocalDateTime.now().plusMinutes(5))));
-        assertThrows(BusinessException.class, () -> service.confirm(
-                10L, "ORDER-1", new ConfirmMemberPaymentOrderRequest(new BigDecimal("1"), PaymentMethod.CARD)));
-        verify(paymentService, never()).completeMembershipPayment(any(), any());
+    @Test
+    void marksOrderFailedWhenGatewayApprovalFails() {
+        PaymentApprovalCommand command =
+                approvalCommand();
+
+        PaymentGatewayException gatewayException =
+                new PaymentGatewayException(
+                        "REJECT_CARD_COMPANY",
+                        "카드사에서 결제를 거절했습니다."
+                );
+
+        when(transactionService.prepareApproval(
+                USER_ID,
+                ORDER_ID,
+                PAYMENT_KEY,
+                AMOUNT
+        )).thenReturn(command);
+
+        when(paymentGateway.confirm(
+                PAYMENT_KEY,
+                ORDER_ID,
+                AMOUNT,
+                IDEMPOTENCY_KEY
+        )).thenThrow(gatewayException);
+
+        PaymentGatewayException thrown =
+                assertThrows(
+                        PaymentGatewayException.class,
+                        () -> service.confirm(
+                                USER_ID,
+                                ORDER_ID,
+                                confirmRequest()
+                        )
+                );
+
+        assertSame(gatewayException, thrown);
+        assertEquals(
+                "REJECT_CARD_COMPANY",
+                thrown.getCode()
+        );
+
+        verify(transactionService).failApproval(
+                PAYMENT_ORDER_ID,
+                "REJECT_CARD_COMPANY",
+                "카드사에서 결제를 거절했습니다."
+        );
+
+        verify(
+                transactionService,
+                never()
+        ).completeApproval(
+                command,
+                approvalResult()
+        );
     }
 
-    @Test void rejectsExpiredOrder() {
-        when(paymentOrderMapper.findByOrderIdForUpdate("ORDER-1", 10L))
-                .thenReturn(Optional.of(order(PaymentOrderStatus.READY, LocalDateTime.now().minusSeconds(1))));
-        assertThrows(BusinessException.class, () -> service.confirm(
-                10L, "ORDER-1", new ConfirmMemberPaymentOrderRequest(new BigDecimal("100000"), PaymentMethod.CARD)));
+    @Test
+    void marksOrderFailedWhenApprovalResultCannotBeSaved() {
+        PaymentApprovalCommand command =
+                approvalCommand();
+
+        PaymentApprovalResult gatewayResult =
+                approvalResult();
+
+        BusinessException saveException =
+                new BusinessException(
+                        ErrorCode.INTERNAL_ERROR,
+                        "결제 주문 완료 상태를 저장하지 못했습니다."
+                );
+
+        when(transactionService.prepareApproval(
+                USER_ID,
+                ORDER_ID,
+                PAYMENT_KEY,
+                AMOUNT
+        )).thenReturn(command);
+
+        when(paymentGateway.confirm(
+                PAYMENT_KEY,
+                ORDER_ID,
+                AMOUNT,
+                IDEMPOTENCY_KEY
+        )).thenReturn(gatewayResult);
+
+        when(transactionService.completeApproval(
+                command,
+                gatewayResult
+        )).thenThrow(saveException);
+
+        BusinessException thrown =
+                assertThrows(
+                        BusinessException.class,
+                        () -> service.confirm(
+                                USER_ID,
+                                ORDER_ID,
+                                confirmRequest()
+                        )
+                );
+
+        assertSame(saveException, thrown);
+
+        verify(transactionService).failApproval(
+                PAYMENT_ORDER_ID,
+                "INTERNAL_APPROVAL_ERROR",
+                "결제 승인 결과를 처리하지 못했습니다."
+        );
     }
 
-    private PaymentOrder order(PaymentOrderStatus status, LocalDateTime expiresAt) {
-        return new PaymentOrder(1L, "ORDER-1", 20L, 30L, null, "LOCAL", new BigDecimal("100000"),
-                status, null, "key", expiresAt, null);
+    @Test
+    void doesNotCallGatewayWhenOrderPreparationFails() {
+        BusinessException preparationException =
+                new BusinessException(
+                        ErrorCode.CONFLICT,
+                        "결제 주문의 유효시간이 만료되었습니다."
+                );
+
+        when(transactionService.prepareApproval(
+                USER_ID,
+                ORDER_ID,
+                PAYMENT_KEY,
+                AMOUNT
+        )).thenThrow(preparationException);
+
+        BusinessException thrown =
+                assertThrows(
+                        BusinessException.class,
+                        () -> service.confirm(
+                                USER_ID,
+                                ORDER_ID,
+                                confirmRequest()
+                        )
+                );
+
+        assertSame(preparationException, thrown);
+
+        verifyNoInteractions(paymentGateway);
+
+        verify(
+                transactionService,
+                never()
+        ).failApproval(
+                PAYMENT_ORDER_ID,
+                "INTERNAL_APPROVAL_ERROR",
+                "결제 승인 결과를 처리하지 못했습니다."
+        );
     }
 
-    private PaymentResponse payment() {
-        return new PaymentResponse(40L, 20L, 30L, "회원", "상품", new BigDecimal("100000"), PaymentMethod.CARD,
-                PaymentStatus.COMPLETED, LocalDateTime.now(), BigDecimal.ZERO, new BigDecimal("100000"));
+    private ConfirmMemberPaymentOrderRequest confirmRequest() {
+        return new ConfirmMemberPaymentOrderRequest(
+                PAYMENT_KEY,
+                AMOUNT
+        );
+    }
+
+    private PaymentApprovalCommand approvalCommand() {
+        return new PaymentApprovalCommand(
+                PAYMENT_ORDER_ID,
+                ORDER_ID,
+                MEMBERSHIP_ID,
+                AMOUNT,
+                PAYMENT_KEY,
+                IDEMPOTENCY_KEY
+        );
+    }
+
+    private PaymentApprovalResult approvalResult() {
+        return new PaymentApprovalResult(
+                PAYMENT_KEY,
+                ORDER_ID,
+                AMOUNT,
+                "카드",
+                "DONE",
+                approvedAt()
+        );
+    }
+
+    private MemberPaymentConfirmationResponse confirmationResponse() {
+        return new MemberPaymentConfirmationResponse(
+                ORDER_ID,
+                PAYMENT_ID,
+                AMOUNT,
+                PaymentMethod.CARD,
+                approvedAt()
+        );
+    }
+
+    private LocalDateTime approvedAt() {
+        return LocalDateTime.of(
+                2026,
+                9,
+                1,
+                10,
+                30
+        );
     }
 }

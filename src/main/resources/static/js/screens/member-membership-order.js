@@ -10,8 +10,33 @@ document.addEventListener("DOMContentLoaded", () => {
     const result = document.querySelector("#membership-order-result");
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+    const tossClientKey =
+        document.querySelector(
+            'meta[name="toss-client-key"]'
+        )?.content;
+
+    const tossSuccessUrl =
+        document.querySelector(
+            'meta[name="toss-success-url"]'
+        )?.content;
+
+    const tossFailUrl =
+        document.querySelector(
+            'meta[name="toss-fail-url"]'
+        )?.content;
+
     let countdownTimer;
     let currentOrder = null;
+
+    let tossPayment = null;
+
+    if (tossClientKey && window.TossPayments) {
+        const tossPayments = TossPayments(tossClientKey);
+
+        tossPayment = tossPayments.payment({
+            customerKey: TossPayments.ANONYMOUS
+        });
+    }
 
     const now = new Date();
     const localToday = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -110,33 +135,69 @@ document.addEventListener("DOMContentLoaded", () => {
             submitButton.disabled = false;
         }
     });
-    result.querySelector("[data-confirm-order]").addEventListener("click", async () => {
-        if (!currentOrder) return;
-        const confirmButton = result.querySelector("[data-confirm-order]");
-        const paymentMethod = result.querySelector("[data-result-payment-method]").value;
-        confirmButton.disabled = true;
-        try {
-            const response = await fetch(`/api/member/payment-orders/${encodeURIComponent(currentOrder.orderId)}/confirm`, {
-                method: "POST",
-                headers: {"Content-Type": "application/json", [csrfHeader]: csrfToken},
-                body: JSON.stringify({amount: currentOrder.amount, paymentMethod})
-            });
-            const payload = await response.json();
-            if (!response.ok || !payload.success) {
-                throw new Error(payload.message || payload.error?.detail || "결제를 완료하지 못했습니다.");
+
+    result.querySelector("[data-confirm-order]")
+        .addEventListener("click", async () => {
+            if (!currentOrder) {
+                showMessage(
+                    "먼저 결제 주문을 생성해 주세요.",
+                    "error"
+                );
+                return;
             }
-            clearInterval(countdownTimer);
-            result.querySelector("[data-result-status]").textContent = payload.message;
-            result.querySelector("[data-result-countdown]").textContent = "결제 완료";
-            result.classList.add("paid");
-            result.querySelector("[data-result-payment-method]").disabled = true;
-            confirmButton.hidden = true;
-            showMessage("결제 내역과 활성 회원권에 즉시 반영되었습니다.", "success");
-        } catch (error) {
-            showMessage(error.message, "error");
-            confirmButton.disabled = false;
-        }
-    });
+
+            if (!tossPayment) {
+                showMessage(
+                    "토스페이먼츠 설정을 불러오지 못했습니다.",
+                    "error"
+                );
+                return;
+            }
+
+            if (!tossSuccessUrl || !tossFailUrl) {
+                showMessage(
+                    "결제 결과 URL이 설정되지 않았습니다.",
+                    "error"
+                );
+                return;
+            }
+
+            const confirmButton =
+                result.querySelector(
+                    "[data-confirm-order]"
+                );
+
+            confirmButton.disabled = true;
+            showMessage("결제창을 열고 있습니다.");
+
+            try {
+                await tossPayment.requestPayment({
+                    method: "CARD",
+
+                    amount: {
+                        currency: "KRW",
+                        value: Number(currentOrder.amount)
+                    },
+
+                    orderId: currentOrder.orderId,
+                    orderName: currentOrder.orderName,
+
+                    successUrl: tossSuccessUrl,
+                    failUrl: tossFailUrl
+                });
+
+            } catch (error) {
+                confirmButton.disabled = false;
+
+                showMessage(
+                    error?.message
+                        || "결제창이 취소되었거나 열리지 않았습니다.",
+                    "error"
+                );
+            }
+        });
+
+
     window.addEventListener("pagehide", () => clearInterval(countdownTimer));
     updateSummary();
 });
