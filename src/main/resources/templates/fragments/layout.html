@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org"><body>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
 <header th:fragment="header"><a th:href="@{/admin/dashboard}">FitFlow</a></header>
 <aside class="sidebar" th:fragment="adminSidebar(activeMenu)">
     <a class="brand" th:href="@{/admin/dashboard}" href="/admin/dashboard"><span>F</span> FitFlow</a>
@@ -9,21 +10,27 @@
         <a th:href="@{/admin/members}" th:classappend="${activeMenu == 'members'} ? 'active'"><i></i>회원 관리</a>
         <a th:href="@{/admin/memberships}" th:classappend="${activeMenu == 'memberships'} ? 'active'"><i></i>회원권·결제</a>
         <a th:href="@{/admin/attendance}" th:classappend="${activeMenu == 'attendance'} ? 'active'"><i></i>출석 관리</a>
+        <a th:href="@{/admin/statistics}" th:classappend="${activeMenu == 'statistics'} ? 'active'">
+            <i></i>
+            운영 통계
+        </a>
         <a th:href="@{/admin/reservations}"
            th:classappend="${activeMenu == 'reservations'} ? 'active'">
             <svg class="sidebar-nav-icon"
                  viewBox="0 0 24 24"
                  aria-hidden="true">
                 <rect x="3" y="5"
-                      width="18" height="16" rx="3" />
-                <path d="M8 3v4M16 3v4M3 10h18" />
-                <path d="M8 14h2M12 14h2M16 14h1" />
+                      width="18" height="16" rx="3"/>
+                <path d="M8 3v4M16 3v4M3 10h18"/>
+                <path d="M8 14h2M12 14h2M16 14h1"/>
             </svg>
             <span>상담·PT 예약</span>
         </a>
         <a th:href="@{/admin/trainers}" th:classappend="${activeMenu == 'trainers'} ? 'active'"><i></i>트레이너</a>
         <a th:href="@{/admin/facilities}" th:classappend="${activeMenu == 'facilities'} ? 'active'"><i></i>시설 관리</a>
-        <a th:href="@{/admin/notifications}" th:classappend="${activeMenu == 'notifications'} ? 'active'"><i></i>알림 <b class="sidebar-badge" th:if="${notificationHeader != null and notificationHeader.unreadCount > 0}" th:text="${notificationHeader.unreadCount}">3</b></a>
+        <a th:href="@{/admin/notifications}" th:classappend="${activeMenu == 'notifications'} ? 'active'"><i></i>알림 <b
+                class="sidebar-badge" th:if="${notificationHeader != null and notificationHeader.unreadCount > 0}"
+                th:text="${notificationHeader.unreadCount}">3</b></a>
     </nav>
     <div class="sidebar-profile">
         <div class="avatar">관</div>
@@ -36,4 +43,5 @@
         </form>
     </div>
 </aside>
-</body></html>
+</body>
+</html>

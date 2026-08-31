@@ -23,21 +23,28 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
 	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1'
+
 	implementation 'com.google.zxing:core:3.5.3'
 	implementation 'com.google.zxing:javase:3.5.3'
+
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'
+
 	annotationProcessor 'org.projectlombok:lombok'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-thymeleaf-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:4.0.1'
+
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testRuntimeOnly 'com.h2database:h2'
 	testAnnotationProcessor 'org.projectlombok:lombok'
+	
 	testImplementation 'org.springframework.security:spring-security-test'
 }
 

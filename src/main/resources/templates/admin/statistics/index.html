@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>운영 통계 | FitFlow</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/layouts/admin.css}">
+
+    <link rel="stylesheet"
+          th:href="@{/css/pages/admin/statistics.css}">
+</head>
+<body>
+<div class="admin-shell">
+
+    <aside th:replace="~{fragments/layout :: adminSidebar('statistics')}"></aside>
+
+    <main class="statistics-page">
+        <header class="statistics-header">
+            <div>
+                <p class="eyebrow">OPERATIONS ANALYTICS</p>
+                <h1>운영 통계</h1>
+                <p>
+                    기간별 가입·출석 매출 현황을 확인합니다.
+                </p>
+            </div>
+
+            <form class="period-form"
+                  th:action="@{/admin/statistics}"
+                  method="get">
+
+                <label>
+                    <span>시작일</span>
+                    <input type="date"
+                           name="startDate"
+                           th:value="${statistics.period.startDate}">
+                </label>
+
+                <label>
+                    <span>종료일</span>
+                    <input type="date"
+                           name="endDate"
+                           th:value="${statistics.period.endDate}">
+                </label>
+
+                <button type="submit">조회</button>
+            </form>
+        </header>
+
+        <div class="statistics-error"
+             th:if="${errorMessage != null}"
+             role="alert">
+            <strong>조회 기간을 확인해 주세요.</strong>
+            <span th:text="${errorMessage}">
+                통계 조회 기간이 올바르지 않습니다.
+            </span>
+        </div>
+
+        <nav class="quick-periods"
+             aria-label="빠른 기간 선택">
+            <button type="button"
+                    data-period-days="7">
+                7일
+            </button>
+
+            <button type="button"
+                    data-period-days="30">
+                30일
+            </button>
+
+            <button type="button"
+                    data-period="current-month">
+                이번 달
+            </button>
+
+            <button type="button"
+                    data-period="previous-month">
+                지난달
+            </button>
+        </nav>
+
+        <section class="statistics-metrics">
+            <article>
+                <span>신규 가입자</span>
+                <strong th:text="|${statistics.summary.newMemberCount}명|">
+                    0명
+                </strong>
+                <small th:classappend="${statistics.comparison.memberChangeRate < 0 ? 'negative' : ''} ">
+                    이전 기간 대비
+                    <b th:text=
+                               "|${statistics.comparison.memberChangeRate >= 0
+                                    ? '+' : ''}${statistics.comparison.memberChangeRate}%|">
+                        0%
+                    </b>
+                </small>
+            </article>
+
+            <article>
+                <span>방문 회원</span>
+                <strong th:text="|${statistics.summary.uniqueVisitorCount}명|">
+                    0명
+                </strong>
+            </article>
+
+            <article>
+                <span>총 출석</span>
+                <strong th:text="|${statistics.summary.totalAttendanceCount}회|">
+                    0회
+                </strong>
+            </article>
+
+            <article>
+                <span>순매출</span>
+                <strong th:text="|₩${#numbers.formatDecimal(
+                                     statistics.summary.netSales,
+                                      0, 'COMMA', 0, 'POINT')}|">
+                    ₩0
+                </strong>
+            </article>
+        </section>
+
+        <section class="statistics-chart-grid">
+            <article class="statistics-panel">
+                <div class="panel-heading">
+                    <h2>가입·출석 추이</h2>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="member-attendance-chart"
+                            role="img"
+                            aria-label="일별 가입 및 출석 추이">
+                    </canvas>
+
+                    <p id="member-attendance-chart-empty"
+                       class="chart-empty"
+                       hidden>
+                        선택한 기간의 가입·출석 데이터가 없습니다.
+                    </p>
+                </div>
+            </article>
+
+            <article class="statistics-panel">
+                <div class="panel-heading">
+                    <h2>일별 순매출</h2>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="sales-chart"
+                            role="img"
+                            aria-label="일별 순매출 추이">
+                    </canvas>
+
+                    <p id="sales-chart-empty"
+                       class="chart-empty"
+                       hidden>
+                        선택한 기간의 매출 데이터가 없습니다.
+                    </p>
+                </div>
+            </article>
+        </section>
+
+        <section class="statistics-bottom-grid">
+            <article class="statistics-panel">
+                <h2>회원권별 매출</h2>
+
+                <ul class="product-sales-list"
+                    th:if="${!#lists.isEmpty(statistics.productSales)}">
+
+                    <li th:each="product : ${statistics.productSales}">
+                        <div>
+                            <strong th:text="${product.productName}">
+                                회원권
+                            </strong>
+                            <span th:text="|${product.salesRatio}%|">
+                                    0%
+                                </span>
+                        </div>
+
+                        <progress max="100"
+                                  th:value="${product.salesRatio}">
+                        </progress>
+
+                        <small th:text="|₩${#numbers.formatDecimal(
+                                            product.netSales,
+                                            0, 'COMMA', 0, 'POINT')}|">
+                            ₩0
+                        </small>
+                    </li>
+                </ul>
+
+                <p class="empty-statistics"
+                   th:if="${#lists.isEmpty(statistics.productSales)}">
+                    선택한 기간의 회원권 매출이 없습니다.
+                </p>
+            </article>
+
+            <article class="statistics-panel">
+                <h2>매출 구성</h2>
+
+                <dl class="sales-breakdown">
+                    <div>
+                        <dt>결제액</dt>
+                        <dd th:text="|₩${#numbers.formatDecimal(
+                                          statistics.summary.grossSales,
+                                           0, 'COMMA', 0, 'POINT')}|">
+
+                        </dd>
+                    </div>
+
+                    <div>
+                        <dt>환불액</dt>
+                        <dd class="negative"
+                            th:text=
+                                    "|-₩${#numbers.formatDecimal(
+                            statistics.summary.refundAmount,
+                            0, 'COMMA', 0, 'POINT')}|">
+                        </dd>
+                    </div>
+
+                    <div>
+                        <dt>순매출</dt>
+                        <dd th:text=
+                                    "|₩${#numbers.formatDecimal(
+                            statistics.summary.netSales,
+                            0, 'COMMA', 0, 'POINT')}|">
+                        </dd>
+                    </div>
+                </dl>
+            </article>
+        </section>
+
+        <section class="statistics-panel daily-statistics-panel">
+            <div class="daily-statistics-heading">
+                <div>
+                    <span>DAILY REPORT</span>
+                    <h2>일별 상세</h2>
+                </div>
+
+                <p th:text="|${statistics.period.startDate} ~ ${statistics.period.endDate}|">
+                    2026-08-01 ~ 2026-08-31
+                </p>
+            </div>
+
+
+            <div class="table-scroll">
+                <table class="statistics-table">
+                    <thead>
+                    <tr>
+                        <th scope="col">날짜</th>
+                        <th scope="col"
+                            class="number-column">
+                            신규 가입
+                        </th>
+                        <th scope="col"
+                            class="number-column">
+                            방문 회원
+                        </th>
+                        <th scope="col"
+                            class="number-column">
+                            총 출석
+                        </th>
+                        <th scope="col"
+                            class="number-column">
+                            결제액
+                        </th>
+                        <th scope="col"
+                            class="number-column">
+                            환불액
+                        </th>
+                        <th scope="col"
+                            class="number-column">
+                            순매출
+                        </th>
+                    </tr>
+                    </thead>
+
+                    <tbody id="statistics-data">
+                    <tr th:each=
+                        "daily : ${statistics.dailyStatistics}"
+                        th:attr="
+                            data-date=${daily.statisticsDate},
+                            data-members=${daily.newMemberCount},
+                            data-visitors=${daily.uniqueVisitorCount},
+                            data-attendances=${daily.attendanceCount},
+                            data-sales=${daily.netSales}">
+
+                        <td class="date-cell">
+                            <time th:datetime=
+                                          "${daily.statisticsDate}"
+                                  th:text=
+                                          "${#temporals.format(
+                          daily.statisticsDate,
+                          'yyyy.MM.dd')}">
+                                2026.08.01
+                            </time>
+                        </td>
+
+                        <td class="number-cell"
+                            th:text=
+                             "|${daily.newMemberCount}명|">
+                            0명
+                        </td>
+
+                        <td class="number-cell"
+                            th:text=
+                             "|${daily.uniqueVisitorCount}명|">
+                            0명
+                        </td>
+
+                        <td class="number-cell attendance-cell"
+                            th:text=
+                             "|${daily.attendanceCount}회|">
+                            0회
+                        </td>
+
+                        <td class="number-cell money-cell"
+                            th:text=
+                             "|₩${#numbers.formatDecimal(
+                            daily.grossSales,
+                            0, 'COMMA', 0, 'POINT')}|">
+                            ₩0
+                        </td>
+
+                        <td class="number-cell money-cell refund-cell"
+                            th:text=
+                             "|₩${#numbers.formatDecimal(
+                            daily.refundAmount,
+                            0, 'COMMA', 0, 'POINT')}|">
+                            ₩0
+                        </td>
+
+                        <td class="number-cell money-cell net-sales-cell"
+                            th:classappend=
+                             "${daily.netSales.signum() < 0
+                            ? ' negative-value'
+                            : ''}"
+                            th:text=
+                             "|₩${#numbers.formatDecimal(
+                            daily.netSales,
+                            0, 'COMMA', 0, 'POINT')}|">
+                            ₩0
+                        </td>
+                    </tr>
+
+                    <tr th:if="${#lists.isEmpty(
+                                statistics.dailyStatistics)}"
+                                class="empty-table-row">
+
+                        <td colspan="7">
+                            선택한 기간의 운영 통계가 없습니다.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="table-guide">
+                방문 회원은 해당 날짜에 출석한 고유 회원 수이며,
+                순매출은 결제액에서 완료된 환불액을 차감한 금액입니다.
+            </p>
+        </section>
+    </main>
+</div>
+<script defer
+        th:src="@{/js/vendor/chart-4.5.1.umd.min.js}"
+        src="/js/vendor/chart-4.5.1.umd.min.js">
+</script>
+<script defer
+        th:src="@{/js/screens/admin-statistics.js}"
+        src="/js/screens/admin-statistics.js">
+
+</script>
+</body>
+</html>

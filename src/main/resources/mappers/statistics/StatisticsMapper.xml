@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.acorn.gymmanagement.statistics.mapper.StatisticsMapper">
+
+    <select id="findSummary"
+            resultType="com.acorn.gymmanagement.statistics.dto.response.StatisticsSummaryResponse">
+        SELECT
+            (
+                SELECT COUNT(*)
+                FROM members
+                WHERE joined_at BETWEEN #{startDate} AND #{endDate}
+            ) AS new_member_count,
+
+            (
+                SELECT COUNT(DISTINCT member_id)
+                FROM attendances
+                WHERE attendance_date
+                    BETWEEN #{startDate} AND #{endDate}
+            ) AS unique_visitor_count,
+
+            (
+                SELECT COUNT(*)
+                FROM attendances
+                WHERE attendance_date
+                    BETWEEN #{startDate} AND #{endDate}
+            ) AS total_attendance_count,
+
+            (
+                SELECT COALESCE(SUM(amount), 0)
+                FROM payments
+                WHERE status IN (
+                    'COMPLETED',
+                    'PARTIALLY_REFUNDED',
+                    'REFUNDED'
+                )
+                AND paid_at &gt;= #{startDate}
+                AND paid_at &lt; DATE_ADD(
+                    #{endDate},
+                    INTERVAL 1 DAY
+                )
+            ) AS gross_sales,
+
+            (
+                SELECT COALESCE(SUM(amount), 0)
+                FROM refunds
+                WHERE status = 'COMPLETED'
+                AND refunded_at &gt;= #{startDate}
+                AND refunded_at &lt; DATE_ADD(
+                    #{endDate},
+                    INTERVAL 1 DAY
+                )
+            ) AS refund_amount,
+
+            (
+                SELECT COALESCE(SUM(amount), 0)
+                FROM payments
+                WHERE status IN (
+                    'COMPLETED',
+                    'PARTIALLY_REFUNDED',
+                    'REFUNDED'
+                )
+                AND paid_at &gt;= #{startDate}
+                AND paid_at &lt; DATE_ADD(
+                    #{endDate},
+                    INTERVAL 1 DAY
+                )
+            )
+            -
+            (
+                SELECT COALESCE(SUM(amount), 0)
+                FROM refunds
+                WHERE status = 'COMPLETED'
+                AND refunded_at &gt;= #{startDate}
+                AND refunded_at &lt; DATE_ADD(
+                    #{endDate},
+                    INTERVAL 1 DAY
+                )
+            ) AS net_sales
+
+    </select>
+
+    <select id="findDailyStatistics"
+            resultType="com.acorn.gymmanagement.statistics.dto.response.DailyStatisticsResponse">
+
+        WITH RECURSIVE statistics_date AS (
+            SELECT #{startDate} AS statistics_date
+
+            UNION ALL
+
+            SELECT DATE_ADD(statistics_date, INTERVAL 1 DAY)
+            FROM statistics_date
+            WHERE statistics_date &lt; #{endDate}
+        ),
+
+        member_daily AS (
+            SELECT joined_at AS statistics_date,
+                    COUNT(*) AS new_member_count
+            FROM members
+            WHERE joined_at BETWEEN #{startDate} AND #{endDate}
+            GROUP BY joined_at
+        ),
+
+        attendance_daily AS (
+            SELECT attendance_date AS statistics_date,
+                    COUNT(*) AS attendance_count,
+                    COUNT(DISTINCT member_id) AS unique_visitor_count
+            FROM attendances
+            WHERE attendance_date BETWEEN #{startDate} AND #{endDate}
+            GROUP BY attendance_date
+        ),
+
+        payment_daily AS (
+            SELECT DATE(paid_at) AS statistics_date,
+                    SUM(amount) AS gross_sales
+            FROM payments
+            WHERE status IN (
+                    'COMPLETED',
+                    'PARTIALLY_REFUNDED',
+                    'REFUNDED'
+            )
+            AND paid_at &gt;= #{startDate}
+            AND paid_at &lt; DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+            GROUP BY DATE(paid_at)
+        ),
+
+        refund_daily AS (
+            SELECT DATE(refunded_at) AS statistics_date,
+                    SUM(amount) AS refund_amount
+            FROM refunds
+            WHERE status = 'COMPLETED'
+            AND refunded_at &gt;= #{startDate}
+            AND refunded_at &lt; DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+            GROUP BY DATE(refunded_at)
+        )
+
+        SELECT
+            d.statistics_date,
+            COALESCE(m.new_member_count, 0)
+                AS new_member_count,
+            COALESCE(a.unique_visitor_count, 0)
+                AS unique_visitor_count,
+            COALESCE(a.attendance_count, 0)
+                AS attendance_count,
+            COALESCE(p.gross_sales, 0)
+                AS gross_sales,
+            COALESCE(r.refund_amount, 0)
+                AS refund_amount,
+            COALESCE(p.gross_sales, 0)
+                - COALESCE(r.refund_amount, 0)
+                AS net_sales
+        FROM statistics_date d
+        LEFT JOIN member_daily m
+                ON m.statistics_date = d.statistics_date
+        LEFT JOIN attendance_daily a
+                ON a.statistics_date = d.statistics_date
+        LEFT JOIN payment_daily p
+                ON p.statistics_date = d.statistics_date
+        LEFT JOIN refund_daily r
+                ON r.statistics_date = d.statistics_date
+        ORDER BY d.statistics_date
+    </select>
+
+    <select id="findProductSales"
+            resultType="com.acorn.gymmanagement.statistics.dto.response.ProductSalesStatisticsResponse">
+
+        WITH product_sales_events AS (
+            SELECT
+                mm.product_id,
+                p.id AS payment_id,
+                p.amount AS gross_sales,
+                CAST(0 AS DECIMAL(19, 2)) AS refund_amount
+            FROM payments p
+            JOIN member_memberships mm
+                ON mm.id = p.member_membership_id
+            WHERE p.status IN (
+                'COMPLETED',
+                'PARTIALLY_REFUNDED',
+                'REFUNDED'
+            )
+            AND p.paid_at &gt;= #{startDate}
+            AND p.paid_at &lt; DATE_ADD(
+                #{endDate},
+                INTERVAL 1 DAY
+            )
+
+            UNION ALL
+
+            SELECT
+                mm.product_id,
+                NULL AS payment_id,
+                CAST(0 AS DECIMAL(19, 2)) AS gross_sales,
+                r.amount AS refund_amount
+            FROM refunds r
+            JOIN payments p
+                ON p.id = r.payment_id
+            JOIN member_memberships mm
+                ON mm.id = p.member_membership_id
+            WHERE r.status = 'COMPLETED'
+            AND r.refunded_at &gt;= #{startDate}
+            AND r.refunded_at &lt; DATE_ADD(
+                #{endDate},
+                INTERVAL 1 DAY
+            )
+        )
+
+        SELECT
+            mp.id AS product_id,
+            mp.name AS product_name,
+            COUNT(DISTINCT sales_event.payment_id)
+                AS payment_count,
+            COALESCE(
+                SUM(sales_event.gross_sales),
+                0
+            )
+            -
+            COALESCE(
+                SUM(sales_event.refund_amount),
+                0
+            ) AS net_sales,
+            0 AS sales_ratio
+        FROM product_sales_events sales_event
+        JOIN membership_products mp
+            ON mp.id = sales_event.product_id
+        GROUP BY
+            mp.id,
+            mp.name
+        ORDER BY net_sales DESC
+        LIMIT 5
+    </select>
+</mapper>

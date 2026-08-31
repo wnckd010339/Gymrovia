@@ -39,7 +39,8 @@ public class SecurityConfig {
                                 "/favicon.ico",
                                 "/css/**",
                                 "/js/**",
-                                "/assets/**"
+                                "/assets/**",
+                                "/webjars/**"
                         ).permitAll()
 
                         .requestMatchers("/logout")
