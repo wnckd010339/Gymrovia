@@ -40,7 +40,7 @@ out/
 ### Local environment ###
 .env
 .env.local
-.env.*.localdlwp
+.env.*.local
 
 /.gradle-cache/
 /bootRun/
