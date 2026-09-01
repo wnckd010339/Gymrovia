@@ -40,41 +40,93 @@
             <form class="product-create-card" method="post" th:action="@{/admin/memberships/products}"
                   th:object="${productForm}">
                 <div class="product-section-heading">
-                    <div><h2>새 회원권 상품</h2><p>판매 기간, 가격과 PT 제공 횟수를 등록합니다.</p></div>
+                    <div><h2>새 회원권 상품</h2>
+                        <p>판매 기간, 가격과 PT 제공 횟수를 등록합니다.</p></div>
                     <button type="submit">상품 등록</button>
                 </div>
                 <div class="product-form-grid">
                     <label><span>상품명</span><input th:field="*{name}" maxlength="100" required></label>
-                    <label><span>유형</span><select th:field="*{productType}" required><option value="">선택</option><option value="GYM">헬스</option><option value="PT">PT</option><option value="COMBINED">헬스 + PT</option></select></label>
-                    <label><span>이용 기간(일)</span><input type="number" th:field="*{durationDays}" min="1" required></label>
-                    <label><span>가격(원)</span><input type="number" th:field="*{price}" min="0" step="1000" required></label>
+                    <label><span>유형</span><select th:field="*{productType}" required>
+                        <option value="">선택</option>
+                        <option value="GYM">헬스</option>
+                        <option value="PT">PT</option>
+                        <option value="COMBINED">헬스 + PT</option>
+                    </select></label>
+                    <label><span>이용 기간(일)</span><input type="number" th:field="*{durationDays}" min="1"
+                                                       required></label>
+                    <label><span>가격(원)</span><input type="number" th:field="*{price}" min="0" step="1000"
+                                                    required></label>
                     <label><span>PT 횟수</span><input type="number" th:field="*{ptSessionCount}" min="0" required></label>
                     <input type="hidden" th:field="*{status}">
                 </div>
-                <ul class="form-errors" th:if="${#fields.hasAnyErrors()}"><li th:each="error : ${#fields.allErrors()}" th:text="${error}"></li></ul>
+                <ul class="form-errors" th:if="${#fields.hasAnyErrors()}">
+                    <li th:each="error : ${#fields.allErrors()}" th:text="${error}"></li>
+                </ul>
             </form>
 
             <section class="product-list-card" aria-labelledby="product-list-title">
-                <div class="product-section-heading"><div><h2 id="product-list-title">등록 상품</h2><p>기존 계약에는 영향을 주지 않고 판매 여부와 상품 정보를 변경합니다.</p></div><strong th:text="|${#lists.size(products)}개|">0개</strong></div>
-                <div class="product-table-scroll"><table><thead><tr><th>상품명</th><th>유형</th><th>기간</th><th>가격</th><th>PT</th><th>판매 상태</th><th>관리</th></tr></thead>
-                    <tbody><tr th:each="product : ${products}"><td colspan="7">
-                        <form class="product-row-form" method="post" th:action="@{/admin/memberships/products/{id}(id=${product.id})}">
-                            <input name="name" th:value="${product.name}" maxlength="100" aria-label="상품명" required>
-                            <select name="productType" aria-label="상품 유형" required><option value="GYM" th:selected="${product.productType.name() == 'GYM'}">헬스</option><option value="PT" th:selected="${product.productType.name() == 'PT'}">PT</option><option value="COMBINED" th:selected="${product.productType.name() == 'COMBINED'}">헬스 + PT</option></select>
-                            <label><input type="number" name="durationDays" th:value="${product.durationDays}" min="1" required><span>일</span></label>
-                            <label><input type="number" name="price" th:value="${product.price}" min="0" step="1000" required><span>원</span></label>
-                            <label><input type="number" name="ptSessionCount" th:value="${product.ptSessionCount}" min="0" required><span>회</span></label>
-                            <select name="status" aria-label="판매 상태" required><option value="ACTIVE" th:selected="${product.status == 'ACTIVE'}">판매 중</option><option value="INACTIVE" th:selected="${product.status == 'INACTIVE'}">판매 중지</option></select>
-                            <button type="submit">저장</button>
-                        </form>
-                    </td></tr><tr th:if="${#lists.isEmpty(products)}"><td class="history-loading" colspan="7">등록된 회원권 상품이 없습니다.</td></tr></tbody>
-                </table></div>
+                <div class="product-section-heading">
+                    <div><h2 id="product-list-title">등록 상품</h2>
+                        <p>기존 계약에는 영향을 주지 않고 판매 여부와 상품 정보를 변경합니다.</p></div>
+                    <strong th:text="|${#lists.size(products)}개|">0개</strong></div>
+                <div class="product-table-scroll">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>상품명</th>
+                            <th>유형</th>
+                            <th>기간</th>
+                            <th>가격</th>
+                            <th>PT</th>
+                            <th>판매 상태</th>
+                            <th>관리</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="product : ${products}">
+                            <td colspan="7">
+                                <form class="product-row-form" method="post"
+                                      th:action="@{/admin/memberships/products/{id}(id=${product.id})}">
+                                    <input name="name" th:value="${product.name}" maxlength="100" aria-label="상품명"
+                                           required>
+                                    <select name="productType" aria-label="상품 유형" required>
+                                        <option value="GYM" th:selected="${product.productType.name() == 'GYM'}">헬스
+                                        </option>
+                                        <option value="PT" th:selected="${product.productType.name() == 'PT'}">PT
+                                        </option>
+                                        <option value="COMBINED"
+                                                th:selected="${product.productType.name() == 'COMBINED'}">헬스 + PT
+                                        </option>
+                                    </select>
+                                    <label><input type="number" name="durationDays" th:value="${product.durationDays}"
+                                                  min="1" required><span>일</span></label>
+                                    <label><input type="number" name="price" th:value="${product.price}" min="0"
+                                                  step="1000" required><span>원</span></label>
+                                    <label><input type="number" name="ptSessionCount"
+                                                  th:value="${product.ptSessionCount}" min="0"
+                                                  required><span>회</span></label>
+                                    <select name="status" aria-label="판매 상태" required>
+                                        <option value="ACTIVE" th:selected="${product.status == 'ACTIVE'}">판매 중</option>
+                                        <option value="INACTIVE" th:selected="${product.status == 'INACTIVE'}">판매 중지
+                                        </option>
+                                    </select>
+                                    <button type="submit">저장</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(products)}">
+                            <td class="history-loading" colspan="7">등록된 회원권 상품이 없습니다.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
             </section>
         </section>
 
         <section class="selected-member-context" th:if="${selectedView == 'history' and selectedMember != null}">
             <div class="selected-member-avatar"
-                 th:text="${#strings.substring(selectedMember.name, 0, 1)}">박</div>
+                 th:text="${#strings.substring(selectedMember.name, 0, 1)}">박
+            </div>
             <div>
                 <strong th:text="${selectedMember.name}">박민수</strong>
                 <span th:text="|${selectedMember.phone} · 회원 #${selectedMember.id}|">
@@ -110,7 +162,8 @@
             </article>
         </section>
 
-        <section class="payment-filter-card" aria-labelledby="payment-filter-title" th:if="${selectedView == 'history'}">
+        <section class="payment-filter-card" aria-labelledby="payment-filter-title"
+                 th:if="${selectedView == 'history'}">
             <div class="filter-heading">
                 <div>
                     <h2 id="payment-filter-title">조회 조건</h2>
@@ -193,7 +246,9 @@
                     </tr>
                     </thead>
                     <tbody id="payment-history-body">
-                    <tr><td class="history-loading" colspan="8">결제 내역을 불러오는 중입니다.</td></tr>
+                    <tr>
+                        <td class="history-loading" colspan="8">결제 내역을 불러오는 중입니다.</td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
@@ -204,11 +259,28 @@
 
         <dialog class="refund-dialog" id="refund-dialog" th:if="${selectedView == 'history'}">
             <form id="refund-form">
-                <div class="refund-dialog-heading"><div><h2>환불 처리</h2><p>환불할 금액과 사유를 확인해 주세요.</p></div><button id="close-refund-dialog" type="button" aria-label="닫기">×</button></div>
-                <label><span>환불 금액</span><input id="refund-amount" type="number" min="1" step="1" required></label>
-                <label><span>환불 사유</span><textarea id="refund-reason" maxlength="500" rows="3" placeholder="선택 입력"></textarea></label>
+                <div class="refund-dialog-heading">
+                    <div><h2>환불 처리</h2>
+                        <p>환불할 금액과 사유를 확인해 주세요.</p></div>
+                    <button id="close-refund-dialog" type="button" aria-label="닫기">×</button>
+                </div>
+                <label>
+                    <span>환불 금액</span>
+                    <input id="refund-amount" type="number" min="1" step="1" required>
+                </label>
+                <label>
+                    <span>환불 사유</span>
+                    <textarea id="refund-reason"
+                              maxlength="200"
+                              rows="3"
+                              placeholder="선택 입력"
+                              required></textarea>
+                </label>
                 <p id="refund-dialog-error" class="refund-dialog-error" role="alert" hidden></p>
-                <div class="refund-dialog-actions"><button id="cancel-refund-dialog" type="button">취소</button><button class="refund-submit" type="submit">환불 실행</button></div>
+                <div class="refund-dialog-actions">
+                    <button id="cancel-refund-dialog" type="button">취소</button>
+                    <button class="refund-submit" type="submit">환불 실행</button>
+                </div>
             </form>
         </dialog>
     </main>

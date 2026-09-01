@@ -95,6 +95,39 @@
         </constructor>
     </resultMap>
 
+    <resultMap id="RefundPaymentTargetResultMap"
+               type="com.acorn.gymmanagement.payment.model.RefundPaymentTarget">
+        <constructor>
+            <idArg name="paymentId"
+                   column="payment_id"
+                   javaType="java.lang.Long"/>
+
+            <arg name="memberId"
+                 column="member_id"
+                 javaType="java.lang.Long"/>
+
+            <arg name="membershipId"
+                 column="membership_id"
+                 javaType="java.lang.Long"/>
+
+            <arg name="paymentKey"
+                 column="payment_key"
+                 javaType="java.lang.String"/>
+
+            <arg name="paymentAmount"
+                 column="payment_amount"
+                 javaType="java.math.BigDecimal"/>
+
+            <arg name="refundedAmount"
+                 column="refunded_amount"
+                 javaType="java.math.BigDecimal"/>
+
+            <arg name="paymentStatus"
+                 column="payment_status"
+                 javaType="com.acorn.gymmanagement.payment.model.PaymentStatus"/>
+        </constructor>
+    </resultMap>
+
     <sql id="paymentResponseColumns">
         SELECT
             p.id AS payment_id,
@@ -143,6 +176,47 @@
             FROM payments
             WHERE member_membership_id = #{membershipId}
               AND status IN ('COMPLETED', 'PARTIALLY_REFUNDED', 'REFUNDED')
+        )
+    </select>
+
+    <select id="findRefundTargetForUpdate"
+            resultMap="RefundPaymentTargetResultMap">
+        SELECT
+            p.id AS payment_id,
+            p.member_id,
+            p.member_membership_id AS membership_id,
+            po.payment_key,
+            p.amount AS payment_amount,
+            p.status AS payment_status,
+
+            COALESCE(
+                (
+                    SELECT SUM(r.amount)
+                    FROM refunds r
+                    WHERE r.payment_id = p.id
+                     AND r.status = 'COMPLETED'
+                ),
+                0
+            ) AS refunded_amount
+
+            FROM payments p
+
+            LEFT JOIN payment_orders po
+                ON po.payment_id = p.id
+                AND po.status = 'PAID'
+
+            WHERE p.id = #{paymentId}
+
+            FOR UPDATE
+    </select>
+
+    <select id="existsPendingRefundByPaymentId"
+            resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM refunds
+            WHERE payment_id = #{paymentId}
+             AND status = 'PENDING'
         )
     </select>
 
@@ -229,11 +303,27 @@
 
     <insert id="insertRefund"
             parameterType="com.acorn.gymmanagement.payment.model.RefundRegistration"
-            useGeneratedKeys="true" keyProperty="refundId" keyColumn="id">
+            useGeneratedKeys="true"
+            keyProperty="refundId"
+            keyColumn="id">
+
         INSERT INTO refunds (
-            payment_id, amount, reason, status, refunded_at, processed_by
-        ) VALUES (
-            #{paymentId}, #{amount}, #{reason}, #{status}, #{refundedAt}, #{processedBy}
+            payment_id,
+            amount,
+            reason,
+            status,
+            refunded_at,
+            processed_by,
+            idempotency_key
+        )
+        VALUES (
+            #{paymentId},
+            #{amount},
+            #{reason},
+            #{status},
+            #{refundedAt},
+            #{processedBy},
+            #{idempotencyKey}
         )
     </insert>
 
@@ -254,5 +344,25 @@
         UPDATE payments
         SET status = #{status}, updated_at = CURRENT_TIMESTAMP
         WHERE id = #{paymentId}
+    </update>
+
+    <update id="completeRefund">
+        UPDATE refunds
+        SET status = 'COMPLETED',
+            pg_transaction_key = #{transactionKey},
+            refunded_at = #{refundedAt},
+            failure_code = NULL,
+            failure_message = NULL
+        WHERE id = #{refundId}
+            AND status = 'PENDING'
+    </update>
+
+    <update id="rejectRefund">
+        UPDATE refunds
+        SET status = 'REJECTED',
+            failure_code = #{failureCode},
+            failure_message = #{failureMessage}
+        WHERE id = #{refundId}
+             AND status = 'PENDING'
     </update>
 </mapper>

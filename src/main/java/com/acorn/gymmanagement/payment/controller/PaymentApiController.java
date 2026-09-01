@@ -6,6 +6,7 @@ import com.acorn.gymmanagement.payment.dto.request.CreateRefundRequest;
 import com.acorn.gymmanagement.payment.dto.response.PaymentHistoryResponse;
 import com.acorn.gymmanagement.payment.dto.response.PaymentResponse;
 import com.acorn.gymmanagement.payment.dto.response.RefundResponse;
+import com.acorn.gymmanagement.payment.service.PaymentRefundService;
 import com.acorn.gymmanagement.payment.service.PaymentService;
 import com.acorn.gymmanagement.security.SessionUser;
 import jakarta.validation.Valid;
@@ -21,6 +22,7 @@ import java.util.List;
 public class PaymentApiController {
 
     private final PaymentService paymentService;
+    private final PaymentRefundService paymentRefundService;
 
     @GetMapping("/api/payments")
     public ApiResponse<List<PaymentHistoryResponse>> findHistory(
@@ -41,7 +43,11 @@ public class PaymentApiController {
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
                 .body(ApiResponse.success(
                         "환불이 완료되었습니다.",
-                        paymentService.refund(paymentId, request, sessionUser.userId())
+                        paymentRefundService.refund(
+                                paymentId,
+                                request,
+                                sessionUser.userId()
+                        )
                 ));
     }
 

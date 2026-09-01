@@ -1,12 +1,10 @@
 package com.acorn.gymmanagement.payment.mapper;
 import com.acorn.gymmanagement.payment.dto.response.*;
-import com.acorn.gymmanagement.payment.model.PaymentRegistration;
-import com.acorn.gymmanagement.payment.model.Payment;
-import com.acorn.gymmanagement.payment.model.PaymentStatus;
-import com.acorn.gymmanagement.payment.model.RefundRegistration;
+import com.acorn.gymmanagement.payment.model.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.List;
 
@@ -41,6 +39,26 @@ public interface PaymentMapper {
 
     Optional<RefundResponse> findRefundById(
             @Param("refundId") Long refundId
+    );
+
+    Optional<RefundPaymentTarget> findRefundTargetForUpdate(
+            @Param("paymentId") Long paymentId
+    );
+
+    boolean existsPendingRefundByPaymentId(
+            @Param("paymentId") Long paymentId
+    );
+
+    int completeRefund(
+            @Param("refundId") Long refundId,
+            @Param("transactionKey") String transactionKey,
+            @Param("refundedAt") LocalDateTime refundedAt
+    );
+
+    int rejectRefund(
+            @Param("refundId") Long refundId,
+            @Param("failureCode") String failureCode,
+            @Param("failureMessage") String failureMessage
     );
 
     int updatePaymentStatus(

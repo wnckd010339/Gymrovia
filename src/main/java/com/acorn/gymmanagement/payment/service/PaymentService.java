@@ -5,7 +5,6 @@ import com.acorn.gymmanagement.common.exception.ErrorCode;
 import com.acorn.gymmanagement.membership.mapper.MembershipMapper;
 import com.acorn.gymmanagement.membership.model.MembershipStatus;
 import com.acorn.gymmanagement.payment.dto.request.CreatePaymentRequest;
-import com.acorn.gymmanagement.payment.dto.request.CreateRefundRequest;
 import com.acorn.gymmanagement.payment.dto.response.*;
 import com.acorn.gymmanagement.payment.mapper.PaymentMapper;
 import com.acorn.gymmanagement.payment.model.*;
@@ -26,6 +25,7 @@ public class PaymentService {
     private final MembershipMapper membershipMapper;
 
     public List<PaymentMemberOptionResponse> findActiveMembers() {
+
         return paymentMapper.findActiveMembers();
     }
 
@@ -91,80 +91,6 @@ public class PaymentService {
         }
 
         return findPayment(registration.getPaymentId());
-    }
-
-    @Transactional
-    public RefundResponse refund(
-            Long paymentId,
-            CreateRefundRequest request,
-            Long processedBy
-    ) {
-        Payment lockedPayment = paymentMapper.findPaymentForUpdate(paymentId)
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.NOT_FOUND,
-                        "결제 내역을 찾을 수 없습니다."
-                ));
-
-        PaymentResponse payment = findPayment(lockedPayment.paymentId());
-
-        if (payment.status() != PaymentStatus.COMPLETED
-                && payment.status() != PaymentStatus.PARTIALLY_REFUNDED) {
-            throw new BusinessException(
-                    ErrorCode.CONFLICT,
-                    "환불 가능한 결제 상태가 아닙니다."
-            );
-        }
-
-        if (request.amount().compareTo(payment.refundableAmount()) > 0) {
-            throw new BusinessException(
-                    ErrorCode.VALIDATION_ERROR,
-                    "환불 가능 금액을 초과했습니다."
-            );
-        }
-
-        String reason = request.reason() == null ? null : request.reason().trim();
-        RefundRegistration registration = new RefundRegistration(
-                paymentId,
-                request.amount(),
-                reason == null || reason.isEmpty() ? null : reason,
-                RefundStatus.COMPLETED,
-                LocalDateTime.now(),
-                processedBy
-        );
-
-        validateAffectedRows(
-                paymentMapper.insertRefund(registration),
-                "환불 내역 저장에 실패했습니다."
-        );
-
-        boolean fullyRefunded = request.amount().compareTo(payment.refundableAmount()) == 0;
-        PaymentStatus targetStatus = fullyRefunded
-                ? PaymentStatus.REFUNDED
-                : PaymentStatus.PARTIALLY_REFUNDED;
-
-        validateAffectedRows(
-                paymentMapper.updatePaymentStatus(paymentId, targetStatus),
-                "결제 상태 변경에 실패했습니다."
-        );
-
-        if (fullyRefunded && payment.membershipId() != null) {
-            int affectedRows = membershipMapper.cancelAfterFullRefund(
-                    payment.memberId(),
-                    payment.membershipId()
-            );
-            if (affectedRows != 1) {
-                throw new BusinessException(
-                        ErrorCode.CONFLICT,
-                        "회원권 상태가 변경되어 전액 환불을 완료할 수 없습니다."
-                );
-            }
-        }
-
-        return paymentMapper.findRefundById(registration.getRefundId())
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.INTERNAL_ERROR,
-                        "저장된 환불 내역을 조회하지 못했습니다."
-                ));
     }
 
     private PaymentResponse findPayment(Long paymentId) {
