@@ -44,17 +44,21 @@ FitFlow는 회원, 회원권·결제, 출석, 예약, 운동, 시설 업무를 �
 - 프로필 및 비밀번호 변경
 - 알림 조회
 
-## 화면 설계 미리보기
+## 주요 화면
 
 | 로그인 | 관리자 대시보드 |
 | --- | --- |
-| ![로그인 화면 설계](design/generated/UI-01-login.svg) | ![관리자 대시보드 화면 설계](design/generated/UI-03-admin-dashboard.svg) |
+| ![FitFlow 로그인](docs/images/fitflow-login.png) | ![FitFlow 관리자 대시보드](docs/images/fitflow-admin-dashboard.png) |
 
 | 트레이너 홈 | 회원 홈 |
 | --- | --- |
-| ![트레이너 홈 화면 설계](design/generated/UI-08-trainer-home.svg) | ![회원 홈 화면 설계](design/generated/MEMBER-01-home.svg) |
+| ![FitFlow 트레이너 홈](docs/images/fitflow-trainer-home.png) | ![FitFlow 회원 홈](docs/images/fitflow-member-home.png) |
 
-역할별 전체 화면 설계와 실제 구현 범위는 [Notion 설계 문서](https://app.notion.com/p/Gym-Management-System-6454d948da9c835bb3b501c48f3d275b)에서 확인할 수 있습니다.
+### 회원 홈 상세
+
+![FitFlow 회원 홈 출석·트레이너·최근 운동](docs/images/fitflow-member-home-details.png)
+
+역할별 전체 화면 설계와 구현 범위는 [Notion 설계 문서](https://app.notion.com/p/Gym-Management-System-6454d948da9c835bb3b501c48f3d275b)에서 확인할 수 있습니다.
 
 ## 주요 기술 문제 해결
 
