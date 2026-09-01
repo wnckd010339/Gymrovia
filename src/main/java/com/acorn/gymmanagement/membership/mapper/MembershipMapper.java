@@ -2,6 +2,7 @@ package com.acorn.gymmanagement.membership.mapper;
 import com.acorn.gymmanagement.membership.dto.response.MemberMembershipResponse;
 import com.acorn.gymmanagement.membership.dto.response.MembershipProductOptionResponse;
 import com.acorn.gymmanagement.membership.model.MemberMembershipRegistration;
+import com.acorn.gymmanagement.membership.model.MembershipProductType;
 import com.acorn.gymmanagement.membership.model.MembershipStatus;
 import com.acorn.gymmanagement.membership.model.MembershipProduct;
 import com.acorn.gymmanagement.membership.dto.request.MembershipProductRequest;
@@ -49,6 +50,8 @@ public interface MembershipMapper {
 
     boolean existsOverlappingMembership(
             @Param("memberId") Long memberId,
+            @Param("productType")
+            MembershipProductType productType,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );

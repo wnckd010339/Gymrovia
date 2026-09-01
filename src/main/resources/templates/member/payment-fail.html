@@ -1,1 +1,41 @@
-<!-- TODO: 토스 결제 실패·사용자 취소 안내 화면을 작성합니다. -->
+<!DOCTYPE html>
+<html lang="ko"
+        xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+            content="width=device-width, initial-scale=1">
+
+    <title>결제 실패 | FitFlow</title>
+
+    <link rel="stylesheet"
+            th:href="@{/css/layouts/member.css}">
+    <link rel="stylesheet"
+            th:href="@{/css/pages/member/membership-order.css(v=2)}">
+
+    <script defer
+            th:src="@{/js/screens/member-payment-fail.js}">
+    </script>
+</head>
+<body>
+<header th:replace="~{member/portal-fragments :: header('memberships')}">
+</header>
+
+<main class="portal-main">
+    <section class="portal-card">
+        <p class="eyebrow">PAYMENT FAILED</p>
+        <h1>결제가 완료되지 않았습니다.</h1>
+
+        <p id="payment-error"
+           role="alert">
+            결제 결과를 확인하고 있습니다.
+        </p>
+
+        <a class="primary-action"
+           th:href="@{/member/memberships}">
+            회원권 화면으로 돌아가기
+        </a>
+    </section>
+</main>
+</body>
+</html>

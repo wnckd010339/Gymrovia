@@ -58,8 +58,7 @@
                 <div><span>주문 금액</span><strong data-order-price>-</strong></div>
             </aside>
             <p class="order-guide">
-                토스페이먼츠 테스트 환경에서 카드 결제를 진행합니다.
-                실제 금액은 청구되지 않습니다.
+                카드 또는 간편결제로 안전하게 결제할 수 있습니다.
             </p>
             <p id="membership-order-message" class="order-message" role="status" aria-live="polite"></p>
             <button id="membership-order-submit" class="primary-action" type="submit"
@@ -76,8 +75,10 @@
                 까지</small>
             <small class="order-countdown">남은 시간 <b data-result-countdown>10:00</b></small>
 
-            <button class="primary-action" type="button" data-confirm-order>
-                테스트 카드 결제
+            <button class="primary-action"
+                    type="button"
+                    data-confirm-order>
+                결제하기
             </button>
             <a th:href="@{/member/memberships}">
                 내 회원권 새로고침
@@ -96,6 +97,7 @@
                     <b th:classappend="${'status-' + #strings.toLowerCase(membership.status)}"
                        th:switch="${membership.status}">
                         <span th:case="'PENDING_PAYMENT'">결제 대기</span>
+                        <span th:case="'UPCOMING'">이용 예정</span>
                         <span th:case="'ACTIVE'">이용 중</span>
                         <span th:case="'PAUSED'">일시 정지</span>
                         <span th:case="'EXPIRED'">기간 만료</span>
@@ -106,10 +108,29 @@
                 <h2 th:text="${membership.productName}">3개월 자유 이용권</h2>
                 <p th:text="|${#temporals.format(membership.startDate, 'yyyy.MM.dd')} ~ ${#temporals.format(membership.endDate, 'yyyy.MM.dd')}|">
                     기간</p>
-                <strong th:if="${membership.remainingDays != null}"
-                        th:text="|D-${membership.remainingDays}|">D-12</strong>
+                <strong th:if="${membership.remainingDays != null
+                                 and membership.status == 'UPCOMING'}"
+                        th:text="|시작 D-${membership.remainingDays}|">
+                    시작 D-48
+                </strong>
+
+                <strong th:if="${membership.remainingDays != null
+                                  and membership.status == 'ACTIVE'}"
+                        th:text="|만료 D-${membership.remainingDays}|">
+                    만료 D-137
+                </strong>
+
                 <small th:if="${membership.remainingPtSessions > 0}"
-                       th:text="|잔여 PT ${membership.remainingPtSessions}회|">잔여 PT</small>
+                       th:text="|잔여 PT ${membership.remainingPtSessions}회|">
+                    잔여 PT
+                </small>
+
+                <button th:if="${membership.status == 'PENDING_PAYMENT'}"
+                        type="button"
+                        class="secondary-action pending-membership-cancel"
+                        th:attr="data-membership-id=${membership.membershipId}">
+                    취소하고 다시 구매
+                </button>
             </article>
             <p class="empty" th:if="${#lists.isEmpty(memberships)}">등록된 회원권이 없습니다.</p>
         </div>

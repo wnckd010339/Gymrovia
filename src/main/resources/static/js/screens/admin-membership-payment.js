@@ -206,7 +206,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function paymentMethodLabel(value) {
-        return {CARD: "카드", CASH: "현금", TRANSFER: "계좌이체"}[value] || value || "-";
+        return {
+            CARD: "카드",
+            CASH: "현금",
+            TRANSFER: "계좌이체",
+            EASY_PAY: "간편결제"
+        }[value] || value || "-";
     }
 
     function statusLabel(value) {

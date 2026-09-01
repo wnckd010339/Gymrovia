@@ -7,10 +7,7 @@ import com.acorn.gymmanagement.payment.dto.response.MemberPaymentConfirmationRes
 import com.acorn.gymmanagement.payment.dto.response.PaymentResponse;
 import com.acorn.gymmanagement.payment.gateway.PaymentApprovalResult;
 import com.acorn.gymmanagement.payment.mapper.PaymentOrderMapper;
-import com.acorn.gymmanagement.payment.model.PaymentApprovalCommand;
-import com.acorn.gymmanagement.payment.model.PaymentMethod;
-import com.acorn.gymmanagement.payment.model.PaymentOrder;
-import com.acorn.gymmanagement.payment.model.PaymentOrderStatus;
+import com.acorn.gymmanagement.payment.model.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -214,6 +211,7 @@ public class PaymentOrderTransactionService {
         return switch (tossMethod) {
             case "카드" -> PaymentMethod.CARD;
             case "계좌이체" -> PaymentMethod.TRANSFER;
+            case "간편결제" -> PaymentMethod.EASY_PAY;
 
             default -> throw new BusinessException(
                     ErrorCode.VALIDATION_ERROR,

@@ -197,7 +197,83 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+    document.querySelectorAll(
+        ".pending-membership-cancel"
+    ).forEach((button) => {
+        button.addEventListener("click", async () => {
+            const membershipId =
+                button.dataset.membershipId;
 
-    window.addEventListener("pagehide", () => clearInterval(countdownTimer));
+            if (!membershipId) {
+                showMessage(
+                    "취소할 회원권 정보를 확인할 수 없습니다.",
+                    "error"
+                );
+                return;
+            }
+
+            const confirmed = window.confirm(
+                "결제 대기 회원권을 취소하고"
+                + "새로 구매하시겠습니까?"
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            if (!csrfToken || !csrfHeader) {
+                showMessage(
+                    "보안 토큰을 확인할 수 없습니다."
+                    + "페이지를 새로고침해 주세요.",
+                    "error"
+                );
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = "취소 중...";
+
+            try {
+                const response = await fetch(
+                    `/api/member/memberships/${
+                        encodeURIComponent(membershipId)
+                    }/cancel`,
+                    {
+                        method: "PATCH",
+                        headers: {
+                            [csrfHeader]: csrfToken
+                        }
+                    }
+                );
+
+                const payload = await response.json();
+
+                if (!response.ok || !payload.success) {
+                    throw new Error(
+                        payload.error?.detail
+                        || payload.message
+                        || "결제 대기 회원권을 취소하지 못했습니다."
+                    );
+                }
+
+                window.location.reload();
+            } catch (error) {
+                button.disabled = false;
+                button.textContent =
+                    "취소하고 다시 구매";
+
+                showMessage(
+                    error?.message
+                    || "회원권 취소 중 오류가 발생했습니다.",
+                    "error"
+                );
+            }
+        });
+    });
+
+    window.addEventListener(
+        "pagehide",
+        () => clearInterval(countdownTimer)
+    );
     updateSummary();
 });

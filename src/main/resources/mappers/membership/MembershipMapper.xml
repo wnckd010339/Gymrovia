@@ -177,15 +177,38 @@
             resultType="boolean">
         SELECT EXISTS (
             SELECT 1
-            FROM member_memberships
-            WHERE member_id = #{memberId}
-             AND status IN (
-                'PENDING_PAYMENT',
-                'ACTIVE',
-                'PAUSED'
+        FROM member_memberships mm
+        JOIN membership_products mp
+            ON mp.id = mm.product_id
+        WHERE mm.member_id = #{memberId}
+         AND mm.status IN (
+            'PENDING_PAYMENT',
+            'ACTIVE',
+            'PAUSED'
+        )
+        AND mm.start_date &lt;= #{endDate}
+        AND mm.end_date &gt;= #{startDate}
+        AND (
+            (
+                #{productType} = 'GYM'
+                AND mp.product_type IN (
+                    'GYM',
+                    'COMBINED'
+                )
             )
-            AND start_date &lt;= #{endDate}
-            AND end_date &gt;= #{startDate}
+            OR
+            (
+                #{productType} = 'PT'
+                AND mp.product_type IN (
+                    'PT',
+                    'COMBINED'
+                )
+            )
+            OR
+            (
+                #{productType} = 'COMBINED'
+            )
+          )
         )
     </select>
 

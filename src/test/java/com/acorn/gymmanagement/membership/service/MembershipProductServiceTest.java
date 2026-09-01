@@ -4,6 +4,7 @@ import com.acorn.gymmanagement.common.exception.BusinessException;
 import com.acorn.gymmanagement.membership.dto.request.MembershipProductRequest;
 import com.acorn.gymmanagement.membership.mapper.MembershipMapper;
 import com.acorn.gymmanagement.membership.model.MembershipProductType;
+import com.acorn.gymmanagement.payment.mapper.PaymentOrderMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,11 +21,15 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class MembershipProductServiceTest {
     @Mock private MembershipMapper membershipMapper;
+    @Mock private PaymentOrderMapper paymentOrderMapper;
     private MembershipService membershipService;
 
     @BeforeEach
     void setUp() {
-        membershipService = new MembershipService(membershipMapper);
+        membershipService = new MembershipService(
+                membershipMapper,
+                paymentOrderMapper
+        );
     }
 
     @Test

@@ -1,19 +1,276 @@
-.membership-order-section{margin-bottom:34px;background:linear-gradient(145deg,#fff 55%,#f1f8e3)}
-.section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:22px}
-.section-heading h2{margin:6px 0 0}.order-step{padding:7px 11px;border-radius:999px;background:var(--mint);color:var(--green);font-size:11px;font-weight:800}
-.membership-order-form{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}.membership-order-form label{display:grid;gap:7px;font-size:12px;font-weight:800}
-.membership-order-form select,.membership-order-form input{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit}
-.membership-order-form select:focus,.membership-order-form input:focus{outline:3px solid rgba(217,243,106,.45);border-color:var(--green)}
-.order-summary{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:18px;border-radius:14px;background:var(--deep);color:#fff}.order-summary[hidden]{display:none}
-.order-summary div{display:grid;gap:5px}.order-summary span{color:#bed6ce;font-size:11px}.order-summary strong{font-size:15px}
-.order-guide,.order-message{grid-column:1/-1;margin:0}.order-guide{color:var(--muted);font-size:12px}.order-message{min-height:20px;font-weight:700}.order-message.error{color:#b4483b}
-.primary-action{grid-column:1/-1;padding:13px 20px;border:0;border-radius:10px;background:var(--lime);color:var(--deep);font:inherit;font-weight:800;cursor:pointer}.primary-action:disabled{cursor:not-allowed;opacity:.55}
-.order-result{padding:20px;border:1px solid #bfdcce;border-radius:14px;background:var(--mint)}.order-result[hidden]{display:none}.order-result>span,.order-result>strong,.order-result>small{display:block}.order-result>strong{margin:8px 0;font-size:12px;color:var(--green);word-break:break-all}.order-result p{margin:4px 0 8px;font-size:17px}.order-result small{color:var(--muted)}.order-result .order-countdown{margin-top:8px;color:var(--green);font-size:13px}.order-result .order-countdown b{font-size:16px}.order-result a{display:inline-block;margin-top:14px;font-weight:800;text-decoration:underline}.order-result.expired{border-color:#e4c8c3;background:#fff4f1}.order-result.expired>span,.order-result.expired .order-countdown{color:#a34135}.section-title{margin:0 0 15px;font-size:20px}
-.demo-payment-method{display:grid;gap:6px;margin-top:16px;font-size:12px;font-weight:800}.demo-payment-method select{min-height:42px;padding:0 12px;border:1px solid #bfdcce;border-radius:9px;background:#fff;font:inherit}.order-result .primary-action{width:100%;margin-top:10px}.order-result.paid{border-color:#83c4aa;background:#e4f7ef}.order-message.success{color:var(--green)}
-.card-top b>span{padding:0;background:transparent;color:inherit}.card-top .status-pending_payment{background:#fff4cf;color:#826600}.card-top .status-active{background:#edf4d2;color:#52622c}.card-top .status-paused{background:#e7eff8;color:#355d82}.card-top .status-expired,.card-top .status-cancelled{background:#edf0ee;color:#71847d}
-@media(max-width:700px){
-    .membership-order-form{grid-template-columns:1fr}
-    .order-summary{grid-template-columns:1fr}
-    .section-heading{align-items:flex-start}
-    .order-step{white-space:nowrap}
+.membership-order-section {
+    margin-bottom: 34px;
+    background: linear-gradient(145deg, #fff 55%, #f1f8e3)
+}
+
+.section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 22px
+}
+
+.section-heading h2 {
+    margin: 6px 0 0
+}
+
+.order-step {
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: var(--mint);
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 800
+}
+
+.membership-order-form {
+    display: grid;
+    grid-template-columns:1.5fr 1fr;
+    gap: 16px
+}
+
+.membership-order-form label {
+    display: grid;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 800
+}
+
+.membership-order-form select, .membership-order-form input {
+    width: 100%;
+    padding: 12px 13px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--ink);
+    font: inherit
+}
+
+.membership-order-form select:focus, .membership-order-form input:focus {
+    outline: 3px solid rgba(217, 243, 106, .45);
+    border-color: var(--green)
+}
+
+.order-summary {
+    grid-column: 1/-1;
+    display: grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap: 12px;
+    padding: 18px;
+    border-radius: 14px;
+    background: var(--deep);
+    color: #fff
+}
+
+.order-summary[hidden] {
+    display: none
+}
+
+.order-summary div {
+    display: grid;
+    gap: 5px
+}
+
+.order-summary span {
+    color: #bed6ce;
+    font-size: 11px
+}
+
+.order-summary strong {
+    font-size: 15px
+}
+
+.order-guide, .order-message {
+    grid-column: 1/-1;
+    margin: 0
+}
+
+.order-guide {
+    color: var(--muted);
+    font-size: 12px
+}
+
+.order-message {
+    min-height: 20px;
+    font-weight: 700
+}
+
+.order-message.error {
+    color: #b4483b
+}
+
+.primary-action {
+    grid-column: 1/-1;
+    padding: 13px 20px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--lime);
+    color: var(--deep);
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer
+}
+
+.primary-action:disabled {
+    cursor: not-allowed;
+    opacity: .55
+}
+
+.order-result {
+    padding: 20px;
+    border: 1px solid #bfdcce;
+    border-radius: 14px;
+    background: var(--mint)
+}
+
+.order-result[hidden] {
+    display: none
+}
+
+.order-result > span, .order-result > strong, .order-result > small {
+    display: block
+}
+
+.order-result > strong {
+    margin: 8px 0;
+    font-size: 12px;
+    color: var(--green);
+    word-break: break-all
+}
+
+.order-result p {
+    margin: 4px 0 8px;
+    font-size: 17px
+}
+
+.order-result small {
+    color: var(--muted)
+}
+
+.order-result .order-countdown {
+    margin-top: 8px;
+    color: var(--green);
+    font-size: 13px
+}
+
+.order-result .order-countdown b {
+    font-size: 16px
+}
+
+.order-result a {
+    display: inline-block;
+    margin-top: 14px;
+    font-weight: 800;
+    text-decoration: underline
+}
+
+.order-result.expired {
+    border-color: #e4c8c3;
+    background: #fff4f1
+}
+
+.order-result.expired > span, .order-result.expired .order-countdown {
+    color: #a34135
+}
+
+.section-title {
+    margin: 0 0 15px;
+    font-size: 20px
+}
+
+.demo-payment-method {
+    display: grid;
+    gap: 6px;
+    margin-top: 16px;
+    font-size: 12px;
+    font-weight: 800
+}
+
+.demo-payment-method select {
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid #bfdcce;
+    border-radius: 9px;
+    background: #fff;
+    font: inherit
+}
+
+.order-result .primary-action {
+    width: 100%;
+    margin-top: 10px
+}
+
+.order-result.paid {
+    border-color: #83c4aa;
+    background: #e4f7ef
+}
+
+.order-message.success {
+    color: var(--green)
+}
+
+.card-top b > span {
+    padding: 0;
+    background: transparent;
+    color: inherit
+}
+
+.card-top .status-pending_payment {
+    background: #fff4cf;
+    color: #826600
+}
+
+.card-top .status-active {
+    background: #edf4d2;
+    color: #52622c
+}
+
+.card-top .status-paused {
+    background: #e7eff8;
+    color: #355d82
+}
+
+.card-top .status-expired, .card-top .status-cancelled {
+    background: #edf0ee;
+    color: #71847d
+}
+
+.pending-membership-cancel {
+    width: 100%;
+    margin-top: 16px;
+    min-height: 42px;
+    border: 1px solid #e0a8a8;
+    border-radius: 9px;
+    background: #fff;
+    color: #a33;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.pending-membership-cancel:hover {
+    background: #fff3f3;
+}
+
+.pending-membership-cancel:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
+@media (max-width: 700px) {
+    .membership-order-form {
+        grid-template-columns:1fr
+    }
+
+    .order-summary {
+        grid-template-columns:1fr
+    }
+
+    .section-heading {
+        align-items: flex-start
+    }
+
+    .order-step {
+        white-space: nowrap
+    }
 }

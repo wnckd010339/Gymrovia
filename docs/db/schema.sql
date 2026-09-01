@@ -183,7 +183,12 @@ CREATE TABLE payments (
     CONSTRAINT fk_payment_member FOREIGN KEY (member_id) REFERENCES members (id),
     CONSTRAINT fk_payment_membership FOREIGN KEY (member_membership_id) REFERENCES member_memberships (id),
     CONSTRAINT ck_payment_amount CHECK (amount > 0),
-    CONSTRAINT ck_payment_method CHECK (payment_method IN ('CARD', 'CASH', 'TRANSFER')),
+    CONSTRAINT ck_payment_method CHECK (
+            payment_method IN (
+                               'CARD',
+                               'CASH',
+                               'TRANSFER',
+                               'EASY_PAY')),
     CONSTRAINT ck_payment_status CHECK (status IN ('PENDING', 'COMPLETED', 'PARTIALLY_REFUNDED', 'REFUNDED', 'CANCELLED')),
     INDEX ix_payments_member_paid_at (member_id, paid_at),
     INDEX ix_payments_membership (member_membership_id)

@@ -10,6 +10,7 @@ import com.acorn.gymmanagement.membership.model.MemberMembershipRegistration;
 import com.acorn.gymmanagement.membership.model.MembershipProduct;
 import com.acorn.gymmanagement.membership.model.MembershipStatus;
 import com.acorn.gymmanagement.membership.model.PendingMembershipPaymentTarget;
+import com.acorn.gymmanagement.payment.mapper.PaymentOrderMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ import java.util.List;
 public class MembershipService {
 
     private final MembershipMapper membershipMapper;
+    private final PaymentOrderMapper paymentOrderMapper;
 
     public List<MemberMembershipResponse> findAllByMemberId(Long memberId) {
         validateMember(memberId);
@@ -83,12 +85,13 @@ public class MembershipService {
 
         if (membershipMapper.existsOverlappingMembership(
                 memberId,
+                product.productType(),
                 request.startDate(),
                 endDate
         )) {
             throw new BusinessException(
                     ErrorCode.CONFLICT,
-                    "해당 기간과 겹치는 회원권이 있습니다."
+                    "동일한 이용 유형의 회원권이 해당 기간과 겹칩니다."
             );
         }
 
@@ -154,6 +157,48 @@ public class MembershipService {
                         MembershipStatus.CANCELLED
                 ),
                 "회원권 취소에 실패했습니다."
+        );
+
+        return findMembership(memberId, membershipId);
+    }
+
+    @Transactional
+    public MemberMembershipResponse cancelPendingForMember(
+            Long userId,
+            Long membershipId
+    ) {
+        Long memberId = membershipMapper
+                .findActiveMemberIdByUserIdForUpdate(userId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.NOT_FOUND,
+                        "활성 회원 정보를 찾을 수 없습니다."
+                ));
+
+        MemberMembershipResponse membership =
+                findMembership(memberId, membershipId);
+
+        if (membership.status()
+                != MembershipStatus.PENDING_PAYMENT) {
+            throw new BusinessException(
+                    ErrorCode.CONFLICT,
+                    "결제 대기 상태의 회원권만 취소할 수 있습니다."
+            );
+        }
+
+        paymentOrderMapper.cancelReadyOrdersForMembership(
+                memberId,
+                membershipId
+        );
+
+        int affectedRows =
+                membershipMapper.cancelPendingMembership(
+                        memberId,
+                        membershipId
+                );
+
+        validateAffectedRows(
+                affectedRows,
+                "결제 대기 회원권을 취소하지 못했습니다."
         );
 
         return findMembership(memberId, membershipId);
@@ -239,12 +284,13 @@ public class MembershipService {
 
         if(membershipMapper.existsOverlappingMembership(
                 memberId,
+                product.productType(),
                 startDate,
                 endDate
         )) {
             throw new BusinessException(
                     ErrorCode.CONFLICT,
-                    "해당 기간과 겹치는 회원권이 있습니다."
+                    "동일한 이용 유형의 회원권이 해당 기간과 겹칩니다."
             );
         }
 

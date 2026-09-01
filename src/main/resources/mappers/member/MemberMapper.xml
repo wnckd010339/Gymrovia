@@ -357,6 +357,7 @@
                         WHEN 'CARD' THEN '카드'
                         WHEN 'CASH' THEN '현금'
                         WHEN 'TRANSFER' THEN '계좌이체'
+                        WHEN 'EASY_PAY' THEN '간편결제'
                         ELSE p.payment_method
                     END,
                     ' 결제 ₩',

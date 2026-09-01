@@ -191,4 +191,13 @@
             AND status = 'READY'
     </update>
 
+    <update id="cancelReadyOrdersForMembership">
+        UPDATE payment_orders
+        SET status = 'CANCELLED',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE member_id = #{memberId}
+            AND member_membership_id = #{membershipId}
+            AND status = 'READY'
+    </update>
+
 </mapper>

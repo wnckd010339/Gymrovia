@@ -37,6 +37,11 @@ public interface PaymentOrderMapper {
             @Param("failureMessage") String failureMessage
     );
 
+    int cancelReadyOrdersForMembership(
+            @Param("memberId") Long memberId,
+            @Param("membershipId") Long membershipId
+    );
+
     List<ExpiredPaymentOrderTarget> findExpiredReadyOrdersForUpdate(
             @Param("now") LocalDateTime now,
             @Param("limit") int limit
