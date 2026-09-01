@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko"
+        xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title th:text="|${statusCode} · ${title} - FitFlow|">
+        오류 | FITfLOW
+    </title>
+
+    <link rel="stylesheet"
+            th:href="@{/css/foundation/base.css}">
+
+    <link rel="stylesheet"
+            th:href="@{/css/pages/error/error.css}">
+</head>
+<body class="fitflow-error-page">
+<main class="error-layout">
+    <section class="error-card">
+        <a class="error-brand"
+           th:href="${homePath}">
+            <span class="error-brand-mark">F</span>
+            <span>FitFlow</span>
+        </a>
+
+        <div class="error-status">
+            <span class="error-status-glow"
+                  aria-hidden="true"></span>
+
+            <strong th:text="${statusCode}">
+                403
+            </strong>
+        </div>
+
+        <p class="error-eyebrow"
+           th:text="${eyebrow}">
+            ACCESS DENIED
+        </p>
+
+        <h1 th:text="${title}">
+            접근 권한이 없습니다.
+        </h1>
+
+        <p class="error-description"
+           th:text="${description}">
+            현재 계정으로는 이 페이지를 이용할 수 없습니다.
+        </p>
+
+        <div class="error-actions">
+            <a class="error-primary-action"
+               th:href="${homePath}"
+               th:text="${homeLabel}">
+                내 홈으로
+            </a>
+
+            <button class="error-secondary-action"
+                    type="button"
+                    onClick="history.back()">
+                이전 페이지
+            </button>
+        </div>
+
+        <p class="error-help">
+            요청 코드
+            <b th:text="${statusCode}">403</b>
+            · 문제가 계속되면 관리자에게 문의해 주세요.
+        </p>
+    </section>
+
+    <aside class="error-visual"
+           aria-hidden="true">
+        <div class="error-orbit error-orbit-one"></div>
+        <div class="error-orbit error-orbit-two"></div>
+
+        <div class="error-visual-card">
+            <span class="error-visual-icon">F</span>
+            <strong>MOVE BETTER</strong>
+            <small>WITH FITFLOW</small>
+        </div>
+    </aside>
+</main>
+
+</body>
+</html>

@@ -73,7 +73,7 @@ public class SecurityConfig {
 
 
                         .anyRequest()
-                        .denyAll()
+                        .authenticated()
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(
