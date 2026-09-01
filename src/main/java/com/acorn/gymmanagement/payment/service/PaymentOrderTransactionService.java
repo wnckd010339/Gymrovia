@@ -6,6 +6,7 @@ import com.acorn.gymmanagement.payment.dto.request.CreatePaymentRequest;
 import com.acorn.gymmanagement.payment.dto.response.MemberPaymentConfirmationResponse;
 import com.acorn.gymmanagement.payment.dto.response.PaymentResponse;
 import com.acorn.gymmanagement.payment.gateway.PaymentApprovalResult;
+import com.acorn.gymmanagement.payment.gateway.PaymentCancellationResult;
 import com.acorn.gymmanagement.payment.mapper.PaymentOrderMapper;
 import com.acorn.gymmanagement.payment.model.*;
 import org.springframework.stereotype.Service;
@@ -220,5 +221,131 @@ public class PaymentOrderTransactionService {
             );
         };
     }
+
+    @Transactional
+    public void prepareCompensation(
+            PaymentApprovalCommand command,
+            RuntimeException cause
+    ) {
+        String message = cause.getMessage() == null
+                ? "결제 승인 후 내부 저장에 실패했습니다."
+                : cause.getMessage();
+
+        if (message.length() > 500) {
+            message = message.substring(0, 500);
+        }
+
+        int affectedRows =
+                paymentOrderMapper.markCompensating(
+                        command.paymentOrderId(),
+                        command.compensationIdempotencyKey(),
+                        "LOCAL_COMPLETION_FAILED",
+                        message
+                );
+
+        if (affectedRows != 1) {
+            throw new BusinessException(
+                    ErrorCode.INTERNAL_ERROR,
+                    "결제 보상 취소 상태를 준비하지 못했습니다."
+            );
+        }
+    }
+
+    @Transactional
+    public void completeCompensation(
+            PaymentApprovalCommand command,
+            PaymentCancellationResult result
+    ) {
+        validateCancellationResult(command, result);
+
+        int affectedRows =
+                paymentOrderMapper.markCompensated(
+                        command.paymentOrderId(),
+                        result.transactionKey(),
+                        result.cancelledAt()
+                );
+
+        if (affectedRows != 1) {
+            throw new BusinessException(
+                    ErrorCode.INTERNAL_ERROR,
+                    "결제 보상 취소 결과를 저장하지 못했습니다."
+            );
+        }
+    }
+
+    @Transactional
+    public void requireReconciliation(
+            Long paymentOrderId,
+            String failureCode,
+            String failureMessage
+    ) {
+        String safeMessage =
+                failureMessage == null
+                    ? "자동 결제 취소 결과를 확인하지 못했습니다."
+                    : failureMessage;
+
+        if (safeMessage.length() > 500) {
+            safeMessage = safeMessage.substring(0, 500);
+        }
+
+        int affectedRows =
+                paymentOrderMapper.markReconciliationRequired(
+                        paymentOrderId,
+                        failureCode,
+                        safeMessage
+                );
+
+        if (affectedRows != 1) {
+            throw new BusinessException(
+                    ErrorCode.INTERNAL_ERROR,
+                    "결제 수동 확인 상태를 저장하지 못했습니다."
+            );
+        }
+    }
+
+    private void validateCancellationResult(
+            PaymentApprovalCommand command,
+            PaymentCancellationResult result
+    ) {
+        if (result == null) {
+            throw new BusinessException(
+                    ErrorCode.INTERNAL_ERROR,
+                    "자동 결제 취소 결과가 없습니다."
+            );
+        }
+
+        if (!command.paymentKey().equals(result.paymentKey())) {
+            throw new BusinessException(
+                    ErrorCode.CONFLICT,
+                    "자동 취소 결과의 결제 키가 일치하지 않습니다."
+            );
+        }
+
+        if (result.cancelledAmount() == null
+                || command.amount().compareTo(
+                        result.cancelledAmount()
+        ) != 0) {
+            throw new BusinessException(
+                    ErrorCode.CONFLICT,
+                    "자동 취소 결과의 금액이 일치하지 않습니다."
+            );
+        }
+
+        if (result.transactionKey() == null
+                || result.transactionKey().isBlank()) {
+            throw new BusinessException(
+                    ErrorCode.INTERNAL_ERROR,
+                    "자동 취소 거래 키가 없습니다."
+            );
+        }
+
+        if (result.cancelledAt() == null) {
+            throw new BusinessException(
+                    ErrorCode.INTERNAL_ERROR,
+                    "자동 취소 시간을 확인하지 못했습니다."
+            );
+        }
+    }
+
 
 }

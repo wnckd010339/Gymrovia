@@ -6,6 +6,7 @@ import com.acorn.gymmanagement.membership.service.MembershipService;
 import com.acorn.gymmanagement.payment.dto.request.ConfirmMemberPaymentOrderRequest;
 import com.acorn.gymmanagement.payment.dto.response.MemberPaymentConfirmationResponse;
 import com.acorn.gymmanagement.payment.gateway.PaymentApprovalResult;
+import com.acorn.gymmanagement.payment.gateway.PaymentCancellationResult;
 import com.acorn.gymmanagement.payment.gateway.PaymentGateway;
 import com.acorn.gymmanagement.payment.gateway.PaymentGatewayException;
 import com.acorn.gymmanagement.payment.mapper.PaymentOrderMapper;
@@ -20,9 +21,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -197,10 +200,37 @@ class MemberPaymentOrderServiceTest {
                 command,
                 approvalResult()
         );
+
+        verify(
+                transactionService,
+                never()
+        ).prepareCompensation(
+                any(PaymentApprovalCommand.class),
+                any(RuntimeException.class)
+        );
+
+        verify(
+                paymentGateway,
+                never()
+        ).cancel(
+                anyString(),
+                any(BigDecimal.class),
+                anyString(),
+                anyString()
+        );
+
+        verify(
+                transactionService,
+                never()
+        ).requireReconciliation(
+                any(Long.class),
+                anyString(),
+                anyString()
+        );
     }
 
     @Test
-    void marksOrderFailedWhenApprovalResultCannotBeSaved() {
+    void compensatesPaymentWhenApprovalResultCannotBeSaved() {
         PaymentApprovalCommand command =
                 approvalCommand();
 
@@ -232,6 +262,27 @@ class MemberPaymentOrderServiceTest {
                 gatewayResult
         )).thenThrow(saveException);
 
+        PaymentCancellationResult cancellationResult =
+                new PaymentCancellationResult(
+                        PAYMENT_KEY,
+                        "compensation-transaction-key",
+                        AMOUNT,
+                        LocalDateTime.of(
+                                2026,
+                                9,
+                                1,
+                                10,
+                                31
+                        )
+                );
+
+        when(paymentGateway.cancel(
+                PAYMENT_KEY,
+                AMOUNT,
+                "결제 승인 후 내부 처리 실패로 인한 자동 취소",
+                command.compensationIdempotencyKey()
+        )).thenReturn(cancellationResult);
+
         BusinessException thrown =
                 assertThrows(
                         BusinessException.class,
@@ -244,7 +295,27 @@ class MemberPaymentOrderServiceTest {
 
         assertSame(saveException, thrown);
 
-        verify(transactionService).failApproval(
+        verify(transactionService).prepareCompensation(
+                command,
+                saveException
+        );
+
+        verify(paymentGateway).cancel(
+                PAYMENT_KEY,
+                AMOUNT,
+                "결제 승인 후 내부 처리 실패로 인한 자동 취소",
+                command.compensationIdempotencyKey()
+        );
+
+        verify(transactionService).completeCompensation(
+                command,
+                cancellationResult
+        );
+
+        verify(
+                transactionService,
+                never()
+        ).failApproval(
                 PAYMENT_ORDER_ID,
                 "INTERNAL_APPROVAL_ERROR",
                 "결제 승인 결과를 처리하지 못했습니다."

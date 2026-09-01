@@ -8,6 +8,7 @@ import com.acorn.gymmanagement.payment.dto.request.CreateMemberPaymentOrderReque
 import com.acorn.gymmanagement.payment.dto.request.ConfirmMemberPaymentOrderRequest;
 import com.acorn.gymmanagement.payment.dto.response.MemberPaymentConfirmationResponse;
 import com.acorn.gymmanagement.payment.dto.response.PaymentOrderResponse;
+import com.acorn.gymmanagement.payment.gateway.PaymentCancellationResult;
 import com.acorn.gymmanagement.payment.mapper.PaymentOrderMapper;
 import com.acorn.gymmanagement.payment.model.PaymentOrderRegistration;
 import com.acorn.gymmanagement.payment.model.PaymentOrderStatus;
@@ -110,19 +111,16 @@ public class MemberPaymentOrderService {
                        request.amount()
                );
 
+       PaymentApprovalResult approvalResult;
+
        try {
-           PaymentApprovalResult result =
+           approvalResult =
                    paymentGateway.confirm(
                            command.paymentKey(),
                            command.orderId(),
                            command.amount(),
                            command.idempotencyKey()
                    );
-
-           return  transactionService.completeApproval(
-                   command,
-                   result
-           );
        } catch (PaymentGatewayException exception) {
            transactionService.failApproval(
                    command.paymentOrderId(),
@@ -131,16 +129,77 @@ public class MemberPaymentOrderService {
            );
 
            throw exception;
-       } catch (RuntimeException exception) {
-           transactionService.failApproval(
-                   command.paymentOrderId(),
-                   "INTERNAL_APPROVAL_ERROR",
-                   "결제 승인 결과를 처리하지 못했습니다."
-           );
-
-           throw exception;
        }
 
+       try {
+           return transactionService.completeApproval(
+                   command,
+                   approvalResult
+           );
+       } catch (RuntimeException localException) {
+           compensateApprovedPayment(
+                   command,
+                   localException
+           );
+
+           throw localException;
+       }
+
+
+
+    }
+
+    private void compensateApprovedPayment(
+            PaymentApprovalCommand command,
+            RuntimeException localException
+    ) {
+        try {
+            transactionService.prepareCompensation(
+                    command,
+                    localException
+            );
+        } catch (RuntimeException prepareationException) {
+            localException.addSuppressed(
+                    prepareationException
+            );
+
+            throw localException;
+        }
+
+        try {
+            PaymentCancellationResult cancellationResult =
+                    paymentGateway.cancel(
+                            command.paymentKey(),
+                            command.amount(),
+                            "결제 승인 후 내부 처리 실패로 인한 자동 취소",
+                            command.compensationIdempotencyKey()
+                    );
+
+            transactionService.completeCompensation(
+                    command,
+                    cancellationResult
+            );
+        } catch (PaymentGatewayException cancellationException) {
+            transactionService.requireReconciliation(
+                    command.paymentOrderId(),
+                    cancellationException.getCode(),
+                    cancellationException.getMessage()
+            );
+
+            localException.addSuppressed(
+                    cancellationException
+            );
+        } catch (RuntimeException compensationException) {
+            transactionService.requireReconciliation(
+                    command.paymentOrderId(),
+                    "COMPENSATION_RESULT_ERROR",
+                    compensationException.getMessage()
+            );
+
+            localException.addSuppressed(
+                    compensationException
+            );
+        }
     }
 
 

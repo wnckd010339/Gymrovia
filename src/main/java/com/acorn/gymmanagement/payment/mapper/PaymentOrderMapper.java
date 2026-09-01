@@ -55,4 +55,23 @@ public interface PaymentOrderMapper {
     int markExpired(
             @Param("paymentOrderId") Long paymentOrderId
     );
+
+    int markCompensating(
+            @Param("id") Long id,
+            @Param("idempotencyKey") String idempotencyKey,
+            @Param("failureCode") String failureCode,
+            @Param("failureMessage") String failureMessage
+    );
+
+    int markCompensated(
+            @Param("id") Long id,
+            @Param("transactionKey") String transactionKey,
+            @Param("compensatedAt") LocalDateTime compensatedAt
+    );
+
+    int markReconciliationRequired(
+            @Param("id") Long id,
+            @Param("failureCode") String failureCode,
+            @Param("failureMessage") String failureMessage
+    );
 }

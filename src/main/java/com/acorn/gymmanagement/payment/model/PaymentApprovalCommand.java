@@ -10,4 +10,7 @@ public record PaymentApprovalCommand(
         String paymentKey,
         String idempotencyKey
 ) {
+    public String compensationIdempotencyKey() {
+        return "COMPENSATION-" + idempotencyKey;
+    }
 }

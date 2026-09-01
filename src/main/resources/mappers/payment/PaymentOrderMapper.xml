@@ -200,4 +200,34 @@
             AND status = 'READY'
     </update>
 
+    <update id="markCompensating">
+        UPDATE payment_orders
+        SET status = 'COMPENSATING',
+            compensation_idempotency_key = #{idempotencyKey},
+            failure_code = #{failureCode},
+            failure_message = #{failureMessage},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+            AND status = 'APPROVING'
+    </update>
+
+    <update id="markCompensated">
+        UPDATE payment_orders
+        SET status = 'COMPENSATED',
+            compensation_transaction_key = #{transactionKey},
+            compensated_at = #{compensatedAt},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+            AND status = 'COMPENSATING'
+    </update>
+
+    <update id="markReconciliationRequired">
+        UPDATE payment_orders
+        SET status = 'RECONCILIATION_REQUIRED',
+            failure_code = #{failureCode},
+            failure_message = #{failureMessage},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+            AND status = 'COMPENSATING'
+    </update>
 </mapper>

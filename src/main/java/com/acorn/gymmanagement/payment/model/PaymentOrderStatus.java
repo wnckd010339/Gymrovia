@@ -6,5 +6,9 @@ public enum PaymentOrderStatus {
     PAID,
     FAILED,
     CANCELLED,
-    EXPIRED
+    EXPIRED,
+
+    COMPENSATING,
+    COMPENSATED,
+    RECONCILIATION_REQUIRED
 }
