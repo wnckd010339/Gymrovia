@@ -140,42 +140,16 @@ public class MembershipService {
     }
 
     @Transactional
-    public MemberMembershipResponse cancel(
+    public MemberMembershipResponse cancelPendingMembership(
             Long memberId,
-            Long membershipId
+            Long membershipId,
+            String failureMessage
     ) {
-        MemberMembershipResponse membership = findMembership(memberId, membershipId);
-
-        if (membership.status() != MembershipStatus.PENDING_PAYMENT) {
-            throw invalidTransition(membership.status(), MembershipStatus.CANCELLED);
-        }
-
-        validateAffectedRows(
-                membershipMapper.updateStatus(
-                        memberId,
-                        membershipId,
-                        MembershipStatus.CANCELLED
-                ),
-                "회원권 취소에 실패했습니다."
-        );
-
-        return findMembership(memberId, membershipId);
-    }
-
-    @Transactional
-    public MemberMembershipResponse cancelPendingForMember(
-            Long userId,
-            Long membershipId
-    ) {
-        Long memberId = membershipMapper
-                .findActiveMemberIdByUserIdForUpdate(userId)
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.NOT_FOUND,
-                        "활성 회원 정보를 찾을 수 없습니다."
-                ));
-
         MemberMembershipResponse membership =
-                findMembership(memberId, membershipId);
+                findMembership(
+                        memberId,
+                        membershipId
+                );
 
         if (membership.status()
                 != MembershipStatus.PENDING_PAYMENT) {
@@ -198,10 +172,44 @@ public class MembershipService {
 
         validateAffectedRows(
                 affectedRows,
-                "결제 대기 회원권을 취소하지 못했습니다."
+                failureMessage
         );
 
-        return findMembership(memberId, membershipId);
+        return findMembership(
+                memberId,
+                membershipId
+        );
+    }
+
+    @Transactional
+    public MemberMembershipResponse cancel(
+            Long memberId,
+            Long membershipId
+    ) {
+        return cancelPendingMembership(
+                memberId,
+                membershipId,
+                "회원권 취소에 실패했습니다."
+        );
+    }
+
+    @Transactional
+    public MemberMembershipResponse cancelPendingForMember(
+            Long userId,
+            Long membershipId
+    ) {
+        Long memberId = membershipMapper
+                .findActiveMemberIdByUserIdForUpdate(userId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.NOT_FOUND,
+                        "활성 회원 정보를 찾을 수 없습니다."
+                ));
+
+        return cancelPendingMembership(
+                memberId,
+                membershipId,
+                "결제 대기 회원권을 취소하지 못했습니다."
+        );
     }
 
     private MemberMembershipResponse changeStatus(
