@@ -127,16 +127,15 @@
             AND u.status = 'ACTIVE'
     </select>
 
-    <select id="existsActiveTrainer"
-            resultType="boolean">
-        SELECT EXISTS (
-            SELECT 1
-            FROM trainers t
-            JOIN users u ON u.id = t.user_id
-            WHERE t.id = #{trainerId}
-                AND t.status = 'ACTIVE'
-                AND u.status = 'ACTIVE'
-        )
+    <select id="lockActiveTrainer"
+            resultType="java.lang.Long">
+        SELECT t.id
+        FROM trainers t
+        JOIN users u ON u.id = t.user_id
+        WHERE t.id = #{trainerId}
+          AND t.status = 'ACTIVE'
+          AND u.status = 'ACTIVE'
+        FOR UPDATE
     </select>
 
     <insert id="insertReservation">

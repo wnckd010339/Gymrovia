@@ -58,8 +58,8 @@ public interface ReservationMapper {
             @Param("cancellationReason") String cancellationReason
     );
 
-
-    boolean existsActiveTrainer(
+    Long lockActiveTrainer(
             @Param("trainerId") Long trainerId
     );
+
 }

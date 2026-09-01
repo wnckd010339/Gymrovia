@@ -76,7 +76,7 @@ public class ReservationService {
                 form.getEndsAt()
         );
         validateReservationRequirements(form);
-        validateTrainer(form.getTrainerId());
+        lockAndValidateTrainer(form.getTrainerId());
         validateTrainerConflict(
                 form.getTrainerId(),
                 form.getStartsAt(),
@@ -185,12 +185,12 @@ public class ReservationService {
         }
     }
 
-    private void validateTrainer(Long trainerId) {
+    private void lockAndValidateTrainer(Long trainerId) {
         if (trainerId == null) {
             return;
         }
 
-        if (!reservationMapper.existsActiveTrainer(trainerId)) {
+        if (reservationMapper.lockActiveTrainer(trainerId) == null) {
             throw new BusinessException(
                     ErrorCode.NOT_FOUND,
                     "활성 트레이너를 찾을 수 없습니다."
@@ -232,7 +232,7 @@ public class ReservationService {
         validateEditable(current.status());
         validatePeriod(form.getStartsAt(), form.getEndsAt());
         validateReservationRequirements(form);
-        validateTrainer(form.getTrainerId());
+        lockAndValidateTrainer(form.getTrainerId());
         validateTrainerConflict(
                 form.getTrainerId(),
                 form.getStartsAt(),
@@ -395,7 +395,7 @@ public class ReservationService {
                   && form.getMemberId() == null) {
             throw new BusinessException(
                     ErrorCode.VALIDATION_ERROR,
-                    "정규 PT 예약은 히원을 선택해야 합니다."
+                    "정규 PT 예약은 회원을 선택해야 합니다."
             );
         }
 
