@@ -76,6 +76,10 @@ public class MemberService {
         );
     }
 
+    public MemberStatusSummaryResponse findStatusSummary() {
+        return memberMapper.findStatusSummary();
+    }
+
     public MemberDetailResponse findDetailResponseById(Long memberId){
         return memberMapper.findDetailById(memberId)
                 .orElseThrow(() -> new BusinessException(

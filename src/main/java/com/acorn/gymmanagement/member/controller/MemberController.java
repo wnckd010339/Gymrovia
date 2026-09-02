@@ -30,6 +30,7 @@ public class MemberController {
 
         model.addAttribute("result", result);
         model.addAttribute("condition", condition);
+        model.addAttribute("statusSummary", memberService.findStatusSummary());
         return "admin/member/list";
     }
 

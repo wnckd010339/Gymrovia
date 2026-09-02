@@ -113,9 +113,9 @@
                     </span>
                 </div>
                 <div class="legend">
-                    <span><i class="legend-dot active"></i>활성 231</span>
-                    <span><i class="legend-dot paused"></i>정지 12</span>
-                    <span><i class="legend-dot withdrawn"></i>탈퇴 5</span>
+                    <span><i class="legend-dot active"></i>활성 <strong th:text="${statusSummary.activeCount}">0</strong></span>
+                    <span><i class="legend-dot paused"></i>정지 <strong th:text="${statusSummary.suspendedCount}">0</strong></span>
+                    <span><i class="legend-dot withdrawn"></i>탈퇴 <strong th:text="${statusSummary.withdrawnCount}">0</strong></span>
                 </div>
             </div>
 

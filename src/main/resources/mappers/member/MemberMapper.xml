@@ -274,6 +274,15 @@
         <include refid="memberSearchFromAndWhere" />
     </select>
 
+    <select id="findStatusSummary"
+            resultType="com.acorn.gymmanagement.member.dto.response.MemberStatusSummaryResponse">
+        SELECT
+            COALESCE(SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END), 0) AS active_count,
+            COALESCE(SUM(CASE WHEN status = 'SUSPENDED' THEN 1 ELSE 0 END), 0) AS suspended_count,
+            COALESCE(SUM(CASE WHEN status = 'WITHDRAWN' THEN 1 ELSE 0 END), 0) AS withdrawn_count
+        FROM members
+    </select>
+
     <select id="findDetailById"
             resultMap="MemberDetailResponseResultMap">
         SELECT

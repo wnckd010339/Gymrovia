@@ -23,6 +23,8 @@ public interface MemberMapper {
 
     long count(@Param("condition") MemberSearchRequest condition);
 
+    MemberStatusSummaryResponse findStatusSummary();
+
     List<Member> findAll();
 
     Optional<Member> findById(Long id);
