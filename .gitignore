@@ -41,6 +41,7 @@ out/
 .env
 .env.local
 .env.*.local
+.env.docker
 
 /.gradle-cache/
 /bootRun/

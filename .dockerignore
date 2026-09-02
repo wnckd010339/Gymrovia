@@ -1,0 +1,12 @@
+.git
+.github
+.gradle
+.gradle-cache
+.idea
+build
+out
+.env
+.env.*
+*.log
+docs
+design
