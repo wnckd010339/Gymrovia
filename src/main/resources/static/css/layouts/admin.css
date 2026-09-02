@@ -81,13 +81,6 @@ body {
     text-decoration: none;
 }
 
-.sidebar nav a i {
-    width: 8px;
-    height: 8px;
-    background: #7da397;
-    border-radius: 50%;
-}
-
 .sidebar nav a:hover,
 .sidebar nav a.active {
     color: #fff;
@@ -96,10 +89,6 @@ body {
 
 .sidebar nav a.active {
     font-weight: 700;
-}
-
-.sidebar nav a.active i {
-    background: var(--lime);
 }
 
 .sidebar-profile {
@@ -181,6 +170,13 @@ body {
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
+    transition:
+        stroke 0.18s ease,
+        transform 0.18s ease;
+}
+
+.sidebar nav a:hover .sidebar-nav-icon {
+    transform: translateX(1px);
 }
 
 .sidebar nav a:hover .sidebar-nav-icon,
