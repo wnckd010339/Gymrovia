@@ -182,19 +182,18 @@ Controller → Service → Mapper → XML Mapper → MySQL
 
 ### 데이터베이스 준비
 
-신규 환경에서는 다음 SQL을 순서대로 실행합니다.
+DB 스키마는 Flyway로 관리합니다. 신규 환경에서는 빈 MySQL 데이터베이스를 만든 뒤 접속 환경변수를 설정하고 애플리케이션을 실행하면 `src/main/resources/db/migration`의 마이그레이션이 자동 적용됩니다.
 
-1. `docs/db/schema.sql`
-2. `docs/db/sample-data.sql` (선택)
+로컬 시연 데이터가 필요하면 마이그레이션 완료 후 `docs/db/sample-data.sql`을 선택적으로 실행합니다. `docs/db/schema.sql`은 전체 구조 확인과 수동 초기화를 위한 참고 파일이며, 기존 테이블을 제거하므로 데이터가 있는 DB에는 실행하지 않습니다.
 
-기존 데이터를 유지하면서 구조를 업데이트할 때는 `docs/db/migrations`의 미적용 파일만 번호순으로 실행합니다. 자세한 내용은 [DB 설정 문서](docs/db/README.md)를 참고하세요.
+기존 DB의 Flyway 등록과 변경 적용 방법은 [DB 설정 문서](docs/db/README.md)를 참고하세요.
 
 ### 환경변수
 
 프로젝트 루트의 `.env` 파일 또는 IDE 실행 설정에 다음 값을 지정합니다. 실제 키와 비밀번호는 Git에 커밋하지 않습니다.
 
 ```properties
-DB_URL=jdbc:mysql://localhost:3306/fitflow
+DB_URL=jdbc:mysql://localhost:3306/gym_management
 DB_USERNAME=사용자명
 DB_PASSWORD=비밀번호
 GOOGLE_CLIENT_ID=Google 클라이언트 ID

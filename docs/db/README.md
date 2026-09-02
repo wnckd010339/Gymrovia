@@ -1,70 +1,75 @@
 # FitFlow 데이터베이스
 
-FitFlow는 MySQL 8을 기준으로 합니다. 신규 환경은 전체 스키마로 구성하고, 데이터가 존재하는 환경은 번호가 붙은 마이그레이션을 순서대로 적용합니다.
+FitFlow는 MySQL 8을 사용하며 DB 스키마는 Flyway로 관리합니다. 애플리케이션을 실행하면 아직 적용되지 않은 마이그레이션이 자동으로 실행되고, 결과는 `flyway_schema_history` 테이블에 기록됩니다.
 
 ## 신규 환경 구성
 
 1. 빈 MySQL 데이터베이스를 생성합니다.
-2. [`schema.sql`](schema.sql)을 실행합니다.
-3. 로컬 개발 또는 시연 데이터가 필요하면 [`sample-data.sql`](sample-data.sql)을 실행합니다.
-4. DB 접속 환경변수를 설정하고 애플리케이션을 실행합니다.
+2. DB 접속 환경변수를 설정합니다.
+3. 애플리케이션을 실행해 Flyway 마이그레이션을 적용합니다.
+4. 로컬 개발 또는 시연 데이터가 필요하면 [`sample-data.sql`](sample-data.sql)을 선택적으로 실행합니다.
 
 ```properties
-DB_URL=jdbc:mysql://localhost:3306/fitflow
+DB_URL=jdbc:mysql://localhost:3306/gym_management
 DB_USERNAME=사용자명
 DB_PASSWORD=비밀번호
 ```
 
-> `schema.sql`은 기존 FitFlow 테이블을 제거하고 다시 생성합니다. 보존해야 하는 데이터가 있는 DB에는 실행하지 마세요.
+최초 실행 시 `src/main/resources/db/migration/V1__baseline.sql`이 전체 테이블을 생성합니다. 정상 적용 여부는 다음 SQL로 확인합니다.
 
-## 기존 환경 업데이트
+```sql
+SELECT version, description, type, script, success
+FROM flyway_schema_history
+ORDER BY installed_rank;
+```
 
-기존 데이터를 유지해야 하는 환경에서는 `schema.sql`을 실행하지 않습니다.
+## 기존 DB를 Flyway에 등록하는 경우
 
-1. 변경 전 DB를 백업합니다.
-2. 현재까지 적용된 마지막 마이그레이션 번호를 확인합니다.
-3. `migrations` 디렉터리에서 적용되지 않은 파일만 번호순으로 실행합니다.
-4. 애플리케이션을 실행하고 관련 기능과 전체 테스트를 확인합니다.
+이미 테이블과 데이터가 존재하는 DB에서는 `schema.sql`이나 `V1__baseline.sql`을 직접 실행하지 않습니다.
 
-현재 별도의 마이그레이션 이력 테이블은 사용하지 않으므로, 각 환경에서 마지막 적용 번호를 직접 기록해야 합니다.
+1. DB를 백업합니다.
+2. 기존 DB가 `V1__baseline.sql`과 동일한 최신 구조인지 확인합니다.
+3. 최초 실행에만 `FLYWAY_BASELINE_ON_MIGRATE=true`를 지정합니다.
+4. 애플리케이션을 실행하고 `flyway_schema_history`의 버전 1 `BASELINE` 기록을 확인합니다.
+5. 이후 `FLYWAY_BASELINE_ON_MIGRATE`를 제거하거나 `false`로 되돌립니다.
 
-## 마이그레이션 목록
+Baseline은 기존 구조를 자동으로 수정하거나 검증하지 않습니다. 누락된 테이블·컬럼이 있다면 등록 전에 필요한 변경 SQL을 먼저 적용해야 합니다.
+
+## 마이그레이션 관리
+
+- 실행 경로: `src/main/resources/db/migration`
+- 최초 기준 스키마: `V1__baseline.sql`
+- 적용 이력: `flyway_schema_history`
+- 적용된 마이그레이션 파일은 수정하거나 다시 실행하지 않습니다.
+- 새로운 변경은 다음 버전의 SQL 파일로 추가합니다.
+
+예:
+
+```text
+V2__add_member_note.sql
+V3__add_payment_index.sql
+```
+
+## 문서용 SQL
+
+[`schema.sql`](schema.sql)은 전체 DB 구조를 한 파일에서 확인하거나 별도 테스트 DB를 수동으로 초기화할 때 사용하는 참고 파일입니다. 파일 상단에 `DROP TABLE`이 있으므로 기존 데이터가 있는 DB에는 실행하지 않습니다.
+
+`migrations` 디렉터리의 001~008 파일은 Flyway 도입 전 기능별 DB 변경 이력입니다. 이미 Flyway로 관리하는 DB에는 다시 실행하지 않으며, 향후 변경은 `src/main/resources/db/migration`에 추가합니다.
 
 | 번호 | 파일 | 변경 내용 |
 | ---: | --- | --- |
-| 001 | `001-add-routine-workout-groups.sql` | 운동 루틴과 운동 기록의 운동 그룹 구조 추가 |
-| 002 | `002-add-payment-orders.sql` | 회원 PG 결제 주문 구조 추가 |
-| 003 | `003-add-notifications.sql` | 사용자 알림 테이블과 조회 인덱스 추가 |
-| 004 | `004-add-reservations.sql` | 예약 테이블, 상태 제약조건과 일정 조회 인덱스 추가 |
-| 005 | `005-add-attendance-qr.sql` | 센터 QR 토큰과 회원 검증권 테이블 추가 |
-| 006 | `006-add-statistics-indexes.sql` | 회원·출석·결제·환불 통계 조회 인덱스 추가 |
-| 007 | `007-add-toss-payment-integration.sql` | Toss 환불 거래 키, 멱등성 키와 실패 정보 추가 |
-| 008 | `008-add-payment-compensation.sql` | PG 승인 후 저장 실패에 대한 결제 보상 상태와 거래 정보 추가 |
+| 001 | `001-add-routine-workout-groups.sql` | 운동 그룹 구조 추가 |
+| 002 | `002-add-payment-orders.sql` | PG 결제 주문 구조 추가 |
+| 003 | `003-add-notifications.sql` | 알림 테이블과 조회 인덱스 추가 |
+| 004 | `004-add-reservations.sql` | 예약 테이블과 일정 조회 인덱스 추가 |
+| 005 | `005-add-attendance-qr.sql` | QR 출석 토큰과 검증 테이블 추가 |
+| 006 | `006-add-statistics-indexes.sql` | 통계 조회 인덱스 추가 |
+| 007 | `007-add-toss-payment-integration.sql` | Toss 환불 추적 정보 추가 |
+| 008 | `008-add-payment-compensation.sql` | 결제 보상 취소 상태와 거래 정보 추가 |
 
-각 마이그레이션은 앞 번호의 변경과 선행 테이블이 적용된 상태를 전제로 합니다.
+## 테스트 데이터
 
-## 변경 관리 원칙
+- [`sample-data.sql`](sample-data.sql): 로컬 개발·시연용 기본 데이터
+- [`notification-test-data.sql`](notification-test-data.sql): 회원권 만료 알림 수동 검증용 데이터
 
-- 이미 적용된 마이그레이션 파일은 수정하거나 다시 실행하지 않습니다.
-- 새로운 DB 변경은 다음 번호의 SQL 파일로 추가합니다.
-- 신규 환경용 `schema.sql`에도 동일한 최종 구조를 반영합니다.
-- 기존 데이터가 있는 환경은 변경 전에 백업합니다.
-- 로컬 시연 데이터와 운영 데이터를 구분합니다.
-- 실제 비밀번호, OAuth 시크릿, Toss 시크릿 키를 SQL이나 문서에 저장하지 않습니다.
-
-## 주요 파일
-
-```text
-docs/db/
-├── schema.sql                 # 신규 환경용 전체 스키마
-├── sample-data.sql            # 선택적 로컬·시연 데이터
-├── notification-test-data.sql # 알림 기능 확인용 데이터
-├── migrations/                # 기존 DB 순차 업데이트 SQL
-└── README.md                  # DB 적용 및 변경 관리 지침
-```
-
-## 스키마 관리 방향
-
-DB 구조의 기준은 `schema.sql`과 `migrations`입니다. 애플리케이션 실행 여부에 따라 테이블 구조가 달라지지 않도록, 런타임 자동 테이블 생성 방식은 제거하고 SQL 적용 절차를 문서화된 한 경로로 통일합니다.
-
-이 구조 개선이 완료되기 전까지는 `notifications`와 `reservations`에 런타임 초기화 코드가 남아 있을 수 있습니다. 관련 Config와 중복 SQL을 제거한 뒤에는 신규 환경에서 반드시 `schema.sql`을 먼저 실행해야 합니다.
+테스트 데이터는 실제 운영 DB에 실행하지 않습니다. 실제 비밀번호, OAuth 시크릿, Toss 시크릿 키도 SQL이나 문서에 저장하지 않습니다.
