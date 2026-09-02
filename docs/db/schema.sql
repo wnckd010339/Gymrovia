@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS workout_routines;
 DROP TABLE IF EXISTS attendance_qr_verifications;
 DROP TABLE IF EXISTS attendance_qr_tokens;
 DROP TABLE IF EXISTS attendances;
+DROP TABLE IF EXISTS reservations;
 DROP TABLE IF EXISTS refunds;
 DROP TABLE IF EXISTS payment_orders;
 DROP TABLE IF EXISTS payments;
@@ -131,6 +132,88 @@ CREATE TABLE trainer_assignments (
     INDEX ix_assignment_trainer_status (trainer_id, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE reservations (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    member_id BIGINT NULL,
+    trainer_id BIGINT NULL,
+
+    customer_name VARCHAR(100) NOT NULL,
+    customer_phone VARCHAR(30) NOT NULL,
+
+    reservation_type VARCHAR(30) NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+
+    starts_at DATETIME NOT NULL,
+    ends_at DATETIME NOT NULL,
+
+    memo VARCHAR(1000) NULL,
+    cancellation_reason VARCHAR(500) NULL,
+
+    created_by BIGINT NOT NULL,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_reservation_member
+        FOREIGN KEY (member_id)
+        REFERENCES members(id),
+
+    CONSTRAINT fk_reservation_trainer
+        FOREIGN KEY (trainer_id)
+        REFERENCES trainers (id),
+
+    CONSTRAINT fk_reservation_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users (id),
+
+    CONSTRAINT ck_reservation_type CHECK (
+        reservation_type IN (
+            'CONSULTATION',
+            'TRIAL_PT',
+            'REGULAR_PT'
+            )
+        ),
+
+    CONSTRAINT ck_reservation_status CHECK (
+        status IN (
+            'PENDING',
+            'CONFIRMED',
+            'COMPLETED',
+            'CANCELLED',
+            'NO_SHOW'
+            )
+        ),
+
+    CONSTRAINT ck_reservation_period
+        CHECK ( ends_at > starts_at ),
+
+    INDEX ix_reservation_period (
+        starts_at,
+        ends_at
+    ),
+
+    INDEX ix_reservation_trainer_period (
+        trainer_id,
+        starts_at,
+        ends_at
+    ),
+
+    INDEX ix_reservation_member (
+        member_id,
+        starts_at
+    ),
+
+    INDEX ix_reservation_status (
+        status,
+        starts_at
+    )
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_0900_ai_ci;
+
 CREATE TABLE membership_products (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
@@ -200,28 +283,58 @@ CREATE TABLE payment_orders (
     member_id BIGINT NOT NULL,
     member_membership_id BIGINT NOT NULL,
     payment_id BIGINT NULL,
+
     pg_provider VARCHAR(30) NOT NULL DEFAULT 'TOSS_PAYMENTS',
     amount DECIMAL(12, 2) NOT NULL,
     status VARCHAR(30) NOT NULL DEFAULT 'READY',
+
     payment_key VARCHAR(200) NULL,
     idempotency_key VARCHAR(300) NOT NULL,
+
+
     failure_code VARCHAR(100) NULL,
     failure_message VARCHAR(500) NULL,
+
     expires_at DATETIME NOT NULL,
     approved_at DATETIME NULL,
+
+    compensation_idempotency_key VARCHAR(300) NULL,
+    compensation_transaction_key VARCHAR(64) NULL,
+    compensation_at DATETIME NULL,
+
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT uk_payment_order_order_id UNIQUE (order_id),
-    CONSTRAINT uk_payment_order_payment_id UNIQUE (payment_id),
-    CONSTRAINT uk_payment_order_payment_key UNIQUE (payment_key),
+    updated_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT uk_payment_order_order_id
+        UNIQUE (order_id),
+
+    CONSTRAINT uk_payment_order_payment_id
+        UNIQUE (payment_id),
+
+    CONSTRAINT uk_payment_order_payment_key
+        UNIQUE (payment_key),
+
     CONSTRAINT uk_payment_order_idempotency_key UNIQUE (idempotency_key),
     CONSTRAINT fk_payment_order_member FOREIGN KEY (member_id) REFERENCES members (id),
     CONSTRAINT fk_payment_order_membership FOREIGN KEY (member_membership_id) REFERENCES member_memberships (id),
     CONSTRAINT fk_payment_order_payment FOREIGN KEY (payment_id) REFERENCES payments (id),
     CONSTRAINT ck_payment_order_amount CHECK (amount > 0),
     CONSTRAINT ck_payment_order_status CHECK (
-        status IN ('READY', 'APPROVING', 'PAID', 'FAILED', 'CANCELLED', 'EXPIRED')
+        status IN (
+                   'READY',
+                   'APPROVING',
+                   'PAID',
+                   'FAILED',
+                   'CANCELLED',
+                   'EXPIRED',
+                   'COMPENSATING',
+                   'COMPENSATED',
+                   'RECONCILIATION_REQUIRED'
+                  )
     ),
+
     INDEX ix_payment_orders_member_created_at (member_id, created_at),
     INDEX ix_payment_orders_membership (member_membership_id),
     INDEX ix_payment_orders_status_expires_at (status, expires_at)
@@ -232,16 +345,54 @@ CREATE TABLE refunds (
     payment_id BIGINT NOT NULL,
     amount DECIMAL(12, 2) NOT NULL,
     reason VARCHAR(500) NULL,
-    status VARCHAR(30) NOT NULL DEFAULT 'COMPLETED',
-    refunded_at DATETIME NOT NULL,
+
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    refunded_at DATETIME NULL,
     processed_by BIGINT NOT NULL,
+
+    pg_transaction_key VARCHAR(64) NULL,
+    idempotency_key VARCHAR(300) NULL,
+    failure_code VARCHAR(100) NULL,
+    failure_message VARCHAR(500) NULL,
+
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_refund_payment FOREIGN KEY (payment_id) REFERENCES payments (id),
-    CONSTRAINT fk_refund_admin FOREIGN KEY (processed_by) REFERENCES users (id),
-    CONSTRAINT ck_refund_amount CHECK (amount > 0),
-    CONSTRAINT ck_refund_status CHECK (status IN ('PENDING', 'COMPLETED', 'REJECTED')),
-    INDEX ix_refunds_payment (payment_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+    CONSTRAINT uk_refund_pg_transaction_key
+        UNIQUE (pg_transaction_key),
+
+    CONSTRAINT uk_refund_idempotency_key
+        UNIQUE (idempotency_key),
+
+    CONSTRAINT fk_refund_payment
+        FOREIGN KEY (payment_id)
+        REFERENCES payments (id),
+
+    CONSTRAINT fk_refund_admin
+        FOREIGN KEY (processed_by)
+        REFERENCES users (id),
+
+    CONSTRAINT ck_refund_amount
+        CHECK (amount > 0),
+
+    CONSTRAINT ck_refund_status CHECK (
+        status IN (
+                'PENDING',
+                'COMPLETED',
+                'REJECTED'
+            )
+        ),
+
+        INDEX ix_refunds_payment (
+            payment_id
+        ),
+
+        INDEX ix_refunds_payment_status (
+            payment_id,
+            status
+        )
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE attendances (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
