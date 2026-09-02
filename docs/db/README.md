@@ -7,7 +7,7 @@ FitFlow는 MySQL 8을 사용하며 DB 스키마는 Flyway로 관리합니다. �
 1. 빈 MySQL 데이터베이스를 생성합니다.
 2. DB 접속 환경변수를 설정합니다.
 3. 애플리케이션을 실행해 Flyway 마이그레이션을 적용합니다.
-4. 로컬 개발 또는 시연 데이터가 필요하면 [`sample-data.sql`](sample-data.sql)을 선택적으로 실행합니다.
+4. 로컬 개발 또는 시연 데이터가 필요하면 비어 있는 전용 DB에서 [`sample-data.sql`](sample-data.sql)을 한 번 실행합니다.
 
 ```properties
 DB_URL=jdbc:mysql://localhost:3306/gym_management
@@ -69,7 +69,13 @@ V3__add_payment_index.sql
 
 ## 테스트 데이터
 
-- [`sample-data.sql`](sample-data.sql): 로컬 개발·시연용 기본 데이터
+- [`sample-data.sql`](sample-data.sql): 실행일 기준으로 생성되는 로컬 개발·포트폴리오 시연용 종합 데이터
 - [`notification-test-data.sql`](notification-test-data.sql): 회원권 만료 알림 수동 검증용 데이터
+
+`sample-data.sql`은 관리자 1명, 트레이너 3명, 회원 10명과 회원권·결제·환불·예약·출석·운동·시설·알림의 여러 상태를 포함합니다. 날짜는 실행일을 기준으로 계산되므로 오늘 출석, 예정 예약, 이번 달 매출, 만료 예정 회원권을 바로 확인할 수 있습니다.
+
+샘플 계정의 비밀번호는 모두 `password`입니다. 로그인 ID는 관리자 `admin`, 트레이너 `trainer01` ~ `trainer03`, 회원 `member01` ~ `member09`입니다.
+
+명시적인 ID를 사용하므로 **Flyway가 적용된 비어 있는 시연 전용 DB에서 한 번만 실행**합니다. 화면 시연용 `payment_key`는 실제 Toss 키가 아니므로 해당 결제에는 실제 PG 환불을 요청하지 않습니다.
 
 테스트 데이터는 실제 운영 DB에 실행하지 않습니다. 실제 비밀번호, OAuth 시크릿, Toss 시크릿 키도 SQL이나 문서에 저장하지 않습니다.
