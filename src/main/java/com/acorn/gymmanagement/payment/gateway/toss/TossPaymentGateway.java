@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
@@ -31,6 +32,8 @@ public class TossPaymentGateway implements PaymentGateway {
 
     private static final String IDEMPOTENCY_KEY_HEADER =
             "Idempotency-Key";
+    private static final ZoneId PAYMENT_TIME_ZONE =
+            ZoneId.of("Asia/Seoul");
 
     private final TossPaymentProperties properties;
     private final TossPaymentErrorHandler errorHandler;
@@ -38,12 +41,13 @@ public class TossPaymentGateway implements PaymentGateway {
 
     public TossPaymentGateway(
             TossPaymentProperties properties,
-            TossPaymentErrorHandler errorHandler
+            TossPaymentErrorHandler errorHandler,
+            RestClient.Builder restClientBuilder
     ) {
         this.properties = properties;
         this.errorHandler = errorHandler;
 
-        this.restClient = RestClient.builder()
+        this.restClient = restClientBuilder
                 .baseUrl(properties.baseUrl())
                 .defaultHeader(
                         HttpHeaders.CONTENT_TYPE,
@@ -448,7 +452,9 @@ public class TossPaymentGateway implements PaymentGateway {
             );
         }
 
-        return dateTime.toLocalDateTime();
+        return dateTime
+                .atZoneSameInstant(PAYMENT_TIME_ZONE)
+                .toLocalDateTime();
     }
 
     private PaymentGatewayException invalidRequest(
