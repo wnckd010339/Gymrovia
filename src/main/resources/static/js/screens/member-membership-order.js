@@ -70,6 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         clearInterval(countdownTimer);
         result.classList.remove("expired");
+        result.querySelector("[data-confirm-order]").disabled = false;
 
         const updateCountdown = () => {
             const remainingSeconds = Math.max(
@@ -86,6 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
             countdown.textContent = "만료됨";
             resultStatus.textContent = "결제 주문의 유효시간이 만료되었습니다.";
             result.classList.add("expired");
+            result.querySelector("[data-confirm-order]").disabled = true;
             form.hidden = false;
             submitButton.disabled = false;
             showMessage("동일한 상품을 다시 주문할 수 있습니다.", "error");
@@ -143,6 +145,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     "먼저 결제 주문을 생성해 주세요.",
                     "error"
                 );
+                return;
+            }
+
+            if (Date.now() >= new Date(currentOrder.expiresAt).getTime()) {
+                showMessage("결제 주문의 유효시간이 만료되었습니다. 새 주문을 만들어 주세요.", "error");
                 return;
             }
 

@@ -22,7 +22,8 @@ public interface PaymentOrderMapper {
 
     int markApproving(
             @Param("id") Long id,
-            @Param("paymentKey") String paymentKey
+            @Param("paymentKey") String paymentKey,
+            @Param("now") LocalDateTime now
     );
 
     int markPaid(

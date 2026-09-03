@@ -50,7 +50,8 @@ public class PaymentOrderTransactionService {
             );
         }
 
-        if (order.expiresAt().isBefore(LocalDateTime.now())) {
+        LocalDateTime now = LocalDateTime.now();
+        if (!order.expiresAt().isAfter(now)) {
             throw new BusinessException(
                     ErrorCode.CONFLICT,
                     "결제 주문의 유효시간이 만료되었습니다."
@@ -66,7 +67,8 @@ public class PaymentOrderTransactionService {
 
         int affectedRows = paymentOrderMapper.markApproving(
                 order.id(),
-                paymentKey
+                paymentKey,
+                now
         );
 
         if (affectedRows != 1) {

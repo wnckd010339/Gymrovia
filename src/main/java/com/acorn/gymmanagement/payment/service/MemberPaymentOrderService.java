@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Service
@@ -58,8 +59,8 @@ public class MemberPaymentOrderService {
 
         String orderId = createOrderId();
         String idempotencyKey = UUID.randomUUID().toString();
-        LocalDateTime expiresAt =
-                LocalDateTime.now().plus(ORDER_EXPIRATION);
+        OffsetDateTime expiresAt =
+                OffsetDateTime.now().plus(ORDER_EXPIRATION);
 
         PaymentOrderRegistration registration =
                 new PaymentOrderRegistration(
@@ -70,7 +71,7 @@ public class MemberPaymentOrderService {
                         target.price(),
                         PaymentOrderStatus.READY,
                         idempotencyKey,
-                        expiresAt
+                        expiresAt.toLocalDateTime()
                 );
 
         int affectedRows =

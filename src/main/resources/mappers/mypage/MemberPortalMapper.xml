@@ -42,7 +42,7 @@
                 ELSE NULL
             END AS remaining_days
 
-        FROM MEMBERS m
+        FROM members m
         JOIN member_memberships mm
             ON mm.member_id = m.id
         JOIN membership_products mp
