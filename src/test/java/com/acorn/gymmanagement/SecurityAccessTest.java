@@ -125,7 +125,7 @@ class SecurityAccessTest {
         when(memberPortalService.profile(1L)).thenReturn(new MemberProfileView(
                 1L, "tester", "테스트 회원", "010-1234-5678",
                 LocalDate.of(1990, 1, 1), MemberGender.MALE,
-                "tester@fitflow.com", "ACTIVE", 10, 3, 5
+                "tester@gymrovia.example", "ACTIVE", 10, 3, 5
         ));
         when(membershipService.findActiveProducts()).thenReturn(List.of());
         when(memberWorkoutService.routine(1L)).thenReturn(List.of());
@@ -421,7 +421,7 @@ class SecurityAccessTest {
         MockHttpSession session = new MockHttpSession();
         session.setAttribute(
                 SessionUser.SESSION_KEY,
-                new SessionUser(1L, "tester", "tester@fitflow.com", role)
+                new SessionUser(1L, "tester", "tester@gymrovia.example", role)
         );
         return session;
     }

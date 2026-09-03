@@ -1,4 +1,4 @@
-# FitFlow CSS 구조
+# Gymrovia CSS 구조
 
 - `foundation/`: 로그인·오류 화면에서 사용하는 최소 공통 스타일
 - `layouts/`: 관리자 사이드바, 트레이너 사이드바, 회원 헤더 등 역할별 레이아웃

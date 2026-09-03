@@ -3,7 +3,7 @@
   <rect width="1440" height="1024" fill="#F4F7F6"/>
   
 <rect x="0" y="0" width="660" height="1024" rx="0" fill="#15332C" stroke="none" stroke-width="1"/>
-<circle cx="80" cy="78" r="26" fill="#C7F04B" stroke="none" stroke-width="1"/><text x="80" y="86" font-family="Pretendard, Inter, Arial, sans-serif" font-size="21" font-weight="900" fill="#15332C" text-anchor="middle">F</text><text x="122" y="87" font-family="Pretendard, Inter, Arial, sans-serif" font-size="30" font-weight="800" fill="#FFFFFF" text-anchor="start">FitFlow</text>
+<circle cx="80" cy="78" r="26" fill="#C7F04B" stroke="none" stroke-width="1"/><text x="80" y="86" font-family="Pretendard, Inter, Arial, sans-serif" font-size="21" font-weight="900" fill="#15332C" text-anchor="middle">G</text><text x="122" y="87" font-family="Pretendard, Inter, Arial, sans-serif" font-size="30" font-weight="800" fill="#FFFFFF" text-anchor="start">Gymrovia</text>
 <text x="80" y="244" font-family="Pretendard, Inter, Arial, sans-serif" font-size="42" font-weight="800" fill="#FFFFFF" text-anchor="start">운영은 더 가볍게,</text><text x="80" y="298" font-family="Pretendard, Inter, Arial, sans-serif" font-size="42" font-weight="800" fill="#C7F04B" text-anchor="start">회원 경험은 더 건강하게.</text>
 <text x="80" y="356" font-family="Pretendard, Inter, Arial, sans-serif" font-size="17" font-weight="500" fill="#B9CEC7" text-anchor="start">회원·출석·결제·운동을 하나의 흐름으로 관리하세요.</text>
 <rect x="80" y="450" width="500" height="282" rx="24" fill="#1D443A" stroke="none" stroke-width="1"/>
@@ -12,7 +12,7 @@
 <line x1="112" y1="574" x2="548" y2="574" stroke="#396258" stroke-width="1" />
 <text x="112" y="620" font-family="Pretendard, Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="#9FC0B5" text-anchor="start">활성 회원권</text><text x="548" y="620" font-family="Pretendard, Inter, Arial, sans-serif" font-size="16" font-weight="800" fill="#FFFFFF" text-anchor="end">186</text>
 <text x="112" y="660" font-family="Pretendard, Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="#9FC0B5" text-anchor="start">이번 달 매출</text><text x="548" y="660" font-family="Pretendard, Inter, Arial, sans-serif" font-size="16" font-weight="800" fill="#C7F04B" text-anchor="end">₩12,480,000</text>
-<text x="80" y="940" font-family="Pretendard, Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#6F988A" text-anchor="start">FITFLOW GYM OPERATIONS · v1.0</text>
+<text x="80" y="940" font-family="Pretendard, Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#6F988A" text-anchor="start">GYMROVIA GYM OPERATIONS · v1.0</text>
 <rect x="660" y="0" width="780" height="1024" rx="0" fill="#F4F7F6" stroke="none" stroke-width="1"/>
 <text x="830" y="222" font-family="Pretendard, Inter, Arial, sans-serif" font-size="32" font-weight="800" fill="#13211D" text-anchor="start">다시 만나 반가워요</text>
 <text x="830" y="257" font-family="Pretendard, Inter, Arial, sans-serif" font-size="14" font-weight="500" fill="#6B7873" text-anchor="start">계정으로 로그인하여 업무를 시작하세요.</text>
@@ -20,7 +20,7 @@
 <text x="830" y="412" font-family="Pretendard, Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="#6B7873" text-anchor="start">비밀번호</text><rect x="830" y="422" width="440" height="48" rx="12" fill="#FFFFFF" stroke="#DDE6E2" stroke-width="1"/><text x="846" y="452" font-family="Pretendard, Inter, Arial, sans-serif" font-size="14" font-weight="500" fill="#13211D" text-anchor="start">••••••••</text>
 <rect x="830" y="493" width="18" height="18" rx="5" fill="#FFFFFF" stroke="#DDE6E2" stroke-width="1"/><text x="860" y="507" font-family="Pretendard, Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#6B7873" text-anchor="start">로그인 상태 유지</text>
 <text x="1270" y="507" font-family="Pretendard, Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#0B6B4F" text-anchor="end">비밀번호 찾기</text>
-<rect x="830" y="550" width="440" height="44" rx="12" fill="#0B6B4F" stroke="none" stroke-width="1"/><text x="1050" y="578" font-family="Pretendard, Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">FitFlow 로그인</text>
+<rect x="830" y="550" width="440" height="44" rx="12" fill="#0B6B4F" stroke="none" stroke-width="1"/><text x="1050" y="578" font-family="Pretendard, Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">Gymrovia 로그인</text>
 <rect x="830" y="622" width="440" height="70" rx="14" fill="#FFF8E8" stroke="#F5DC9E" stroke-width="1"/><text x="854" y="651" font-family="Pretendard, Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#9B6B10" text-anchor="start">보안 안내</text><text x="854" y="675" font-family="Pretendard, Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#806B44" text-anchor="start">계정 상태와 역할에 따라 접근 화면이 달라집니다.</text>
 
   </svg>

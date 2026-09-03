@@ -26,12 +26,12 @@ const svg=(body,title)=>`<svg xmlns="http://www.w3.org/2000/svg" width="1440" he
 
 function nav(active="홈"){
   const items=["홈","내 회원권","운동","출석","이용 내역"];
-  return `${rect(0,0,1440,88,C.white,0)}${circle(54,44,22,C.lime)}${text(54,51,"F",17,C.dark,900,"middle")}${text(88,52,"FitFlow",24,C.dark,900)}
+  return `${rect(0,0,1440,88,C.white,0)}${circle(54,44,22,C.lime)}${text(54,51,"G",17,C.dark,900,"middle")}${text(88,52,"Gymrovia",24,C.dark,900)}
   ${items.map((v,i)=>`${active===v?rect(370+i*116,25,100,40,C.mint,20):""}${text(420+i*116,51,v,13,active===v?C.green:C.muted,active===v?800:600,"middle")}`).join("")}
   ${circle(1284,44,19,C.soft)}${text(1284,49,"김",12,C.green,800,"middle")}${text(1316,42,"김지훈",13,C.ink,800)}${text(1316,60,"서울 성수점",10,C.muted,500)}
   ${line(0,88,1440,88,C.line)}`;
 }
-const footer=()=>`${text(54,992,"© 2026 FitFlow · 회원 전용 포털",11,C.muted,600)}${text(1386,992,"이용약관  ·  개인정보처리방침  ·  고객센터",11,C.muted,600,"end")}`;
+const footer=()=>`${text(54,992,"© 2026 Gymrovia · 회원 전용 포털",11,C.muted,600)}${text(1386,992,"이용약관  ·  개인정보처리방침  ·  고객센터",11,C.muted,600,"end")}`;
 const progress=(x,y,w,p,color=C.green)=>`${rect(x,y,w,10,C.soft,5)}${rect(x,y,w*p,10,color,5)}`;
 const metric=(x,y,w,label,value,sub,fill=C.white,accent=C.green)=>`${rect(x,y,w,138,fill,22,C.line)}${text(x+24,y+34,label,12,C.muted,700)}${text(x+24,y+78,value,28,C.ink,900)}${text(x+24,y+108,sub,12,accent,700)}`;
 const screens=[];
@@ -62,7 +62,7 @@ screens.push(["MEMBER-V2-02-membership",svg(`
 ${nav("내 회원권")}
 ${text(54,146,"내 회원권",30,C.ink,900)}${text(54,176,"현재 이용권과 혜택을 한눈에 확인하세요.",14,C.muted,500)}
 ${rect(54,210,836,348,C.dark,28)}
-${text(88,258,"FITFLOW MEMBERSHIP",12,C.lime,800)}${pill(704,236,144,"정상 이용 중",C.lime,C.dark)}
+${text(88,258,"GYMROVIA MEMBERSHIP",12,C.lime,800)}${pill(704,236,144,"정상 이용 중",C.lime,C.dark)}
 ${text(88,322,"3개월 자유 이용권",32,"#FFFFFF",900)}${text(88,358,"서울 성수점 전 시설 자유 이용",14,"#BDD2CB",500)}
 ${text(88,418,"2026.05.12",12,"#A7C2B9",600)}${text(856,418,"2026.08.11",12,"#A7C2B9",600,"end")}
 ${progress(88,438,768,.78,C.lime)}${text(88,486,"남은 기간",12,"#A7C2B9",600)}${text(184,488,"12일",20,"#FFFFFF",900)}

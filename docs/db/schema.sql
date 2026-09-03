@@ -1,4 +1,4 @@
--- FitFlow MySQL 8.0+ 기준 스키마
+-- Gymrovia MySQL 8.0+ 기준 스키마
 -- 회원 자기 가입(LOCAL/GOOGLE), 선택적 트레이너 배정, 회원권/결제/출석,
 -- 운동 루틴/기록, 시설 관리를 포함한 MVP 구조
 

@@ -49,7 +49,7 @@ function sidebar(active, role="관리자") {
     : role === "회원"
       ? ["마이페이지","QR 출석","운동 루틴","운동 기록","이용 내역"]
       : ["대시보드","회원 관리","회원권·결제","출석 관리","트레이너","시설 관리"];
-  let b = `${rect(0,0,240,1024,C.navy,0)}${circle(42,44,20,C.lime)}${text(42,50,"F",16,C.navy,900,"middle")}${text(72,51,"FitFlow",23,"#FFFFFF",800)}
+  let b = `${rect(0,0,240,1024,C.navy,0)}${circle(42,44,20,C.lime)}${text(42,50,"G",16,C.navy,900,"middle")}${text(72,51,"Gymrovia",23,"#FFFFFF",800)}
   ${text(28,104,role.toUpperCase(),11,"#8FB2A6",700)}`;
   items.forEach((it,i)=>{
     const y=132+i*58, on=it===active;
@@ -85,7 +85,7 @@ const screens = [];
 // UI-01 Login
 screens.push(["UI-01-login", svg(`
 ${rect(0,0,660,1024,C.navy,0)}
-${circle(80,78,26,C.lime)}${text(80,86,"F",21,C.navy,900,"middle")}${text(122,87,"FitFlow",30,"#FFFFFF",800)}
+${circle(80,78,26,C.lime)}${text(80,86,"G",21,C.navy,900,"middle")}${text(122,87,"Gymrovia",30,"#FFFFFF",800)}
 ${text(80,244,"운영은 더 가볍게,",42,"#FFFFFF",800)}${text(80,298,"회원 경험은 더 건강하게.",42,C.lime,800)}
 ${text(80,356,"회원·출석·결제·운동을 하나의 흐름으로 관리하세요.",17,"#B9CEC7",500)}
 ${rect(80,450,500,282,"#1D443A",24)}
@@ -94,7 +94,7 @@ ${text(112,546,"48",38,"#FFFFFF",800)}${text(172,546,"명 체크인",15,"#B9CEC7
 ${line(112,574,548,574,"#396258")}
 ${text(112,620,"활성 회원권",13,"#9FC0B5",600)}${text(548,620,"186",16,"#FFFFFF",800,"end")}
 ${text(112,660,"이번 달 매출",13,"#9FC0B5",600)}${text(548,660,"₩12,480,000",16,C.lime,800,"end")}
-${text(80,940,"FITFLOW GYM OPERATIONS · v1.0",11,"#6F988A",700)}
+${text(80,940,"GYMROVIA GYM OPERATIONS · v1.0",11,"#6F988A",700)}
 ${rect(660,0,780,1024,C.bg,0)}
 ${text(830,222,"다시 만나 반가워요",32,C.ink,800)}
 ${text(830,257,"계정으로 로그인하여 업무를 시작하세요.",14,C.muted,500)}
@@ -102,7 +102,7 @@ ${input(830,324,440,"로그인 ID","admin01")}
 ${input(830,412,440,"비밀번호","••••••••")}
 ${rect(830,493,18,18,C.surface,5,C.line)}${text(860,507,"로그인 상태 유지",13,C.muted,500)}
 ${text(1270,507,"비밀번호 찾기",13,C.green,700,"end")}
-${button(830,550,440,"FitFlow 로그인","primary")}
+${button(830,550,440,"Gymrovia 로그인","primary")}
 ${rect(830,622,440,70,"#FFF8E8",14,"#F5DC9E")}${text(854,651,"보안 안내",12,"#9B6B10",700)}${text(854,675,"계정 상태와 역할에 따라 접근 화면이 달라집니다.",12,"#806B44",500)}
 `, "UI-01 로그인")]);
 

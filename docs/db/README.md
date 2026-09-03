@@ -1,6 +1,6 @@
-# FitFlow 데이터베이스
+# Gymrovia 데이터베이스
 
-FitFlow는 MySQL 8을 사용하며 DB 스키마는 Flyway로 관리합니다. 애플리케이션을 실행하면 아직 적용되지 않은 마이그레이션이 자동으로 실행되고, 결과는 `flyway_schema_history` 테이블에 기록됩니다.
+Gymrovia는 MySQL 8을 사용하며 DB 스키마는 Flyway로 관리합니다. 애플리케이션을 실행하면 아직 적용되지 않은 마이그레이션이 자동으로 실행되고, 결과는 `flyway_schema_history` 테이블에 기록됩니다.
 
 ## 신규 환경 구성
 

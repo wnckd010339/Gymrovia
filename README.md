@@ -1,6 +1,6 @@
-# FitFlow
+# Gymrovia
 
-FitFlow는 회원, 회원권·결제, 출석, 예약, 운동, 시설 업무를 한곳에서 처리하는 헬스장 운영 관리 웹 애플리케이션입니다. 관리자·트레이너·회원 역할별 화면과 접근 권한을 제공합니다.
+Gymrovia는 회원, 회원권·결제, 출석, 예약, 운동, 시설 업무를 한곳에서 처리하는 헬스장 운영 관리 웹 애플리케이션입니다. 관리자·트레이너·회원 역할별 화면과 접근 권한을 제공합니다.
 
 > 핵심 MVP를 구현하고 결제 정합성, 예약 동시성, 권한별 오류 처리처럼 운영 환경에서 발생할 수 있는 문제까지 보완했습니다.
 
@@ -46,17 +46,19 @@ FitFlow는 회원, 회원권·결제, 출석, 예약, 운동, 시설 업무를 �
 
 ## 주요 화면
 
+> 아래 실행 화면은 이름 변경 전 촬영한 자료입니다. 현재 화면의 브랜드는 Gymrovia이며, 이미지는 재촬영 후 교체할 예정입니다.
+
 | 로그인 | 관리자 대시보드 |
 | --- | --- |
-| ![FitFlow 로그인](docs/images/fitflow-login.png) | ![FitFlow 관리자 대시보드](docs/images/fitflow-admin-dashboard.png) |
+| ![Gymrovia 로그인](docs/images/fitflow-login.png) | ![Gymrovia 관리자 대시보드](docs/images/fitflow-admin-dashboard.png) |
 
 | 트레이너 홈 | 회원 홈 |
 | --- | --- |
-| ![FitFlow 트레이너 홈](docs/images/fitflow-trainer-home.png) | ![FitFlow 회원 홈](docs/images/fitflow-member-home.png) |
+| ![Gymrovia 트레이너 홈](docs/images/fitflow-trainer-home.png) | ![Gymrovia 회원 홈](docs/images/fitflow-member-home.png) |
 
 ### 회원 홈 상세
 
-![FitFlow 회원 홈 출석·트레이너·최근 운동](docs/images/fitflow-member-home-details.png)
+![Gymrovia 회원 홈 출석·트레이너·최근 운동](docs/images/fitflow-member-home-details.png)
 
 역할별 전체 화면 설계와 구현 범위는 [Notion 설계 문서](https://app.notion.com/p/Gym-Management-System-6454d948da9c835bb3b501c48f3d275b)에서 확인할 수 있습니다.
 
@@ -120,13 +122,13 @@ PG의 실제 취소 결과와 결제·환불·회원권 상태가 함께 변경�
 
 **해결**
 
-- 일반 화면 요청은 FitFlow 전용 HTML 오류 화면으로 처리
+- 일반 화면 요청은 Gymrovia 전용 HTML 오류 화면으로 처리
 - `/api/**` 요청은 공통 `ApiResponse` JSON 형식으로 반환
 - 인증·권한·검증·충돌·외부 PG 오류에 적절한 HTTP 상태 코드 적용
 
 **결과**
 
-사용자는 일관된 FitFlow 오류 화면을 보고, API 클라이언트는 구조화된 오류 코드와 상세 메시지를 받을 수 있습니다.
+사용자는 일관된 Gymrovia 오류 화면을 보고, API 클라이언트는 구조화된 오류 코드와 상세 메시지를 받을 수 있습니다.
 
 ## 기술 스택
 

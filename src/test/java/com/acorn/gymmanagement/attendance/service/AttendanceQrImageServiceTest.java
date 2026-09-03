@@ -16,7 +16,7 @@ class AttendanceQrImageServiceTest {
     @Test
     void createsPngDataUrlForAttendanceUrl() {
         String dataUrl = service.createDataUrl(
-                "https://fitflow.example/member/attendance/qr?token=test-token"
+                "https://gymrovia.example/member/attendance/qr?token=test-token"
         );
 
         String prefix = "data:image/png;base64,";

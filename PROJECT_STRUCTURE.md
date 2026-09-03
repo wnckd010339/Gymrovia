@@ -1,4 +1,4 @@
-# Gym Management System 구조
+# Gymrovia 구조
 
 Spring Boot, MyBatis, Thymeleaf 기반 헬스장 운영 관리 프로젝트입니다.
 

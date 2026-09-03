@@ -55,6 +55,6 @@ class SessionUserTest {
     }
 
     private SessionUser sessionUser(String role) {
-        return new SessionUser(1L, "tester", "tester@fitflow.com", role);
+        return new SessionUser(1L, "tester", "tester@gymrovia.example", role);
     }
 }

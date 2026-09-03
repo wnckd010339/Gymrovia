@@ -18,8 +18,8 @@ const svg = `
   <rect width="1440" height="1024" fill="#F4F7F6"/>
   <rect width="240" height="1024" fill="#15332C"/>
   <circle cx="42" cy="44" r="20" fill="#C7F04B"/>
-  <text x="42" y="51" text-anchor="middle" font-family="Pretendard, Arial" font-size="16" font-weight="900" fill="#15332C">F</text>
-  <text x="72" y="51" font-family="Pretendard, Arial" font-size="23" font-weight="800" fill="#FFFFFF">FitFlow</text>
+  <text x="42" y="51" text-anchor="middle" font-family="Pretendard, Arial" font-size="16" font-weight="900" fill="#15332C">G</text>
+  <text x="72" y="51" font-family="Pretendard, Arial" font-size="23" font-weight="800" fill="#FFFFFF">Gymrovia</text>
   <text x="28" y="104" font-family="Pretendard, Arial" font-size="11" font-weight="700" fill="#8FB2A6">관리자</text>
   <rect x="18" y="165" width="204" height="44" rx="12" fill="#245145"/>
   <text x="62" y="193" font-family="Pretendard, Arial" font-size="14" font-weight="700" fill="#FFFFFF">회원 관리</text>

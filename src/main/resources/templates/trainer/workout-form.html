@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" th:href="@{/css/layouts/trainer.css}"><link rel="stylesheet" th:href="@{/css/layouts/trainer-sidebar.css}"><title>운동 기록 저장 | FitFlow</title></head><body>
+<!doctype html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" th:href="@{/css/layouts/trainer.css}"><link rel="stylesheet" th:href="@{/css/layouts/trainer-sidebar.css}"><title>운동 기록 저장 | Gymrovia</title></head><body>
 <header th:replace="~{trainer/fragments :: sidebar('workouts', ${headerProfile})}"></header>
 <main class="portal-main"><a class="back-link" href="/trainer/workouts">← 운동 기록</a>
 <form class="workout-editor" th:action="${sessionId==null?'/trainer/workouts':'/trainer/workouts/'+sessionId}" method="post" th:object="${workoutForm}">

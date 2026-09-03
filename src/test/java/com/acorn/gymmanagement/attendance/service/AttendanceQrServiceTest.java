@@ -50,15 +50,15 @@ class AttendanceQrServiceTest {
     @Test
     void createsCenterQrAndStoresOnlyItsHash() {
         when(attendanceQrMapper.insertQrToken(
-                anyString(), eq("FITFLOW_MAIN"), eq("핏플로우 강남센터"), any(LocalDateTime.class)
+                anyString(), eq("FITFLOW_MAIN"), eq("짐로비아 강남센터"), any(LocalDateTime.class)
         )).thenReturn(1);
 
-        String rawToken = service.createCenterQr("FITFLOW_MAIN", "핏플로우 강남센터");
+        String rawToken = service.createCenterQr("FITFLOW_MAIN", "짐로비아 강남센터");
 
         assertNotNull(rawToken);
         assertFalse(rawToken.isBlank());
         verify(attendanceQrMapper).insertQrToken(
-                anyString(), eq("FITFLOW_MAIN"), eq("핏플로우 강남센터"), any(LocalDateTime.class)
+                anyString(), eq("FITFLOW_MAIN"), eq("짐로비아 강남센터"), any(LocalDateTime.class)
         );
     }
 

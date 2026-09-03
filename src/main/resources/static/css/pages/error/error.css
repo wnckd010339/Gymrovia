@@ -14,7 +14,7 @@
     box-sizing: border-box;
 }
 
-.fitflow-error-page {
+.gymrovia-error-page {
     min-height: 100vh;
     margin: 0;
     color: var(--error-ink);

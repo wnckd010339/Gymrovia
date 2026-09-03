@@ -46,6 +46,8 @@ public class SecurityConfig {
                         .requestMatchers("/logout")
                         .authenticated()
 
+                        .requestMatchers("/actuator/health").permitAll()
+
                         .requestMatchers("/admin/**")
                         .hasRole(SessionUser.ROLE_ADMIN)
 

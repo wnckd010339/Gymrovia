@@ -2,7 +2,7 @@
 
 ## 프로젝트 개요
 
-FitFlow는 Spring Boot 기반 헬스장 운영 관리 웹 프로젝트입니다.
+Gymrovia는 Spring Boot 기반 헬스장 운영 관리 웹 프로젝트입니다.
 
 주요 기술 스택:
 

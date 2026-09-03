@@ -30,8 +30,8 @@ class AdminAttendanceQrControllerTest {
     void setUp() {
         controller = new AdminAttendanceQrController(attendanceQrService, imageService);
         ReflectionTestUtils.setField(controller, "centerCode", "FITFLOW_MAIN");
-        ReflectionTestUtils.setField(controller, "centerName", "핏플로우 강남센터");
-        ReflectionTestUtils.setField(controller, "publicBaseUrl", "https://fitflow.example");
+        ReflectionTestUtils.setField(controller, "centerName", "짐로비아 강남센터");
+        ReflectionTestUtils.setField(controller, "publicBaseUrl", "https://gymrovia.example");
     }
 
     @Test
@@ -41,12 +41,12 @@ class AdminAttendanceQrControllerTest {
         String view = controller.page(model);
 
         assertEquals("admin/attendance/qr", view);
-        assertEquals("핏플로우 강남센터", model.getAttribute("centerName"));
+        assertEquals("짐로비아 강남센터", model.getAttribute("centerName"));
     }
 
     @Test
     void issueBuildsMemberUrlAndReturnsQrImage() {
-        when(attendanceQrService.createCenterQr("FITFLOW_MAIN", "핏플로우 강남센터"))
+        when(attendanceQrService.createCenterQr("FITFLOW_MAIN", "짐로비아 강남센터"))
                 .thenReturn("raw-token");
         when(attendanceQrService.centerQrSeconds()).thenReturn(30L);
         when(imageService.createDataUrl(contains("/member/attendance/qr?token=raw-token")))
@@ -56,9 +56,9 @@ class AdminAttendanceQrControllerTest {
 
         assertEquals("data:image/png;base64,AAA", response.imageDataUrl());
         assertEquals(30L, response.expiresInSeconds());
-        assertEquals("핏플로우 강남센터", response.centerName());
+        assertEquals("짐로비아 강남센터", response.centerName());
         verify(imageService).createDataUrl(
-                "https://fitflow.example/member/attendance/qr?token=raw-token"
+                "https://gymrovia.example/member/attendance/qr?token=raw-token"
         );
     }
 }
