@@ -1,6 +1,7 @@
 package com.acorn.gymmanagement.attendance.dto.request;
 
 import java.time.LocalDate;
+import com.acorn.gymmanagement.common.time.CenterTime;
 
 public record AttendanceSearchCondition(String keyword, LocalDate date, String status) {
     public AttendanceSearchCondition {
@@ -9,6 +10,6 @@ public record AttendanceSearchCondition(String keyword, LocalDate date, String s
     }
 
     public LocalDate searchDate() {
-        return date == null ? LocalDate.now() : date;
+        return date == null ? CenterTime.today() : date;
     }
 }

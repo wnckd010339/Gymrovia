@@ -55,12 +55,12 @@ class AttendanceServiceTest {
         );
         when(attendanceMapper.findActiveMemberIdByUserId(10L)).thenReturn(Optional.of(25L));
         when(attendanceMapper.findOpenAttendanceForMemberForUpdate(25L)).thenReturn(Optional.of(attendance));
-        when(attendanceMapper.checkout(org.mockito.ArgumentMatchers.eq(77L), any(LocalDateTime.class))).thenReturn(1);
+        when(attendanceMapper.checkout(org.mockito.ArgumentMatchers.eq(77L), any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(1);
 
         attendanceService.checkoutMember(10L);
 
         verify(attendanceMapper).findOpenAttendanceForMemberForUpdate(25L);
-        verify(attendanceMapper).checkout(org.mockito.ArgumentMatchers.eq(77L), any(LocalDateTime.class));
+        verify(attendanceMapper).checkout(org.mockito.ArgumentMatchers.eq(77L), any(LocalDateTime.class), any(LocalDateTime.class));
     }
 
     @Test

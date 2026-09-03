@@ -101,14 +101,15 @@
         ) history ORDER BY occurred_at DESC, transaction_id DESC
     </select>
     <select id="findProfile" resultType="com.acorn.gymmanagement.mypage.dto.response.MemberProfileView">
+        <bind name="centerToday" value="@com.acorn.gymmanagement.common.time.CenterTime@today()"/>
         SELECT m.id AS member_id, lc.login_id, m.name, m.phone, m.birth_date, m.gender,
         u.email, m.status,
         (SELECT MIN(DATEDIFF(mm.end_date, CURRENT_DATE)) FROM member_memberships mm
         WHERE mm.member_id=m.id AND mm.status='ACTIVE' AND mm.start_date &lt;= CURRENT_DATE AND mm.end_date &gt;=
         CURRENT_DATE) AS remaining_days,
         (SELECT COUNT(DISTINCT a.attendance_date) FROM attendances a
-        WHERE a.member_id=m.id AND a.attendance_date &gt;= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
-        AND a.attendance_date &lt; DATE_ADD(DATE_FORMAT(CURRENT_DATE, '%Y-%m-01'), INTERVAL 1 MONTH)) AS
+        WHERE a.member_id=m.id AND a.attendance_date &gt;= DATE_FORMAT(#{centerToday}, '%Y-%m-01')
+        AND a.attendance_date &lt; DATE_ADD(DATE_FORMAT(#{centerToday}, '%Y-%m-01'), INTERVAL 1 MONTH)) AS
         monthly_attendance_count,
         COALESCE((SELECT SUM(mm.remaining_pt_sessions) FROM member_memberships mm
         JOIN membership_products mp ON mp.id=mm.product_id

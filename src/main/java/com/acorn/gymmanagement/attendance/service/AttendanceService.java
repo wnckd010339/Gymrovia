@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.acorn.gymmanagement.common.time.CenterTime;
 
 @Service
 @RequiredArgsConstructor
@@ -49,14 +50,15 @@ public class AttendanceService {
     }
 
     private void completeCheckout(Long attendanceId) {
-        if (attendanceMapper.checkout(attendanceId, LocalDateTime.now()) != 1) {
+        if (attendanceMapper.checkout(attendanceId, CenterTime.now(), LocalDateTime.now()) != 1) {
             throw new BusinessException(ErrorCode.CONFLICT, "출석 상태가 변경되어 퇴실 처리하지 못했습니다.");
         }
     }
 
     @Transactional
     public void checkIn(Long memberId) {
-        LocalDate today = LocalDate.now();
+        LocalDateTime checkedInAt = CenterTime.now();
+        LocalDate today = checkedInAt.toLocalDate();
         if (attendanceMapper.findActiveMemberForUpdate(memberId).isEmpty()) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "활성 회원을 찾을 수 없습니다.");
         }
@@ -66,7 +68,7 @@ public class AttendanceService {
         if (attendanceMapper.existsOpenAttendance(memberId)) {
             throw new BusinessException(ErrorCode.CONFLICT, "이미 입장 처리된 회원입니다.");
         }
-        AttendanceRegistration registration = new AttendanceRegistration(memberId, today, LocalDateTime.now());
+        AttendanceRegistration registration = new AttendanceRegistration(memberId, today, checkedInAt);
         if (attendanceMapper.insertAttendance(registration) != 1) {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "입장 처리에 실패했습니다.");
         }

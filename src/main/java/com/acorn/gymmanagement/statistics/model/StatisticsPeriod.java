@@ -4,6 +4,7 @@ import com.acorn.gymmanagement.common.exception.BusinessException;
 import com.acorn.gymmanagement.common.exception.ErrorCode;
 
 import java.time.LocalDate;
+import com.acorn.gymmanagement.common.time.CenterTime;
 import java.time.temporal.ChronoUnit;
 
 public record StatisticsPeriod(
@@ -21,7 +22,7 @@ public record StatisticsPeriod(
     ) {
         LocalDate endDate = requestedEndDate != null
                 ? requestedEndDate
-                : LocalDate.now();
+                : CenterTime.today();
 
         LocalDate startDate = requestedStartDate != null
                 ? requestedStartDate
@@ -44,7 +45,7 @@ public record StatisticsPeriod(
             );
         }
 
-        if (endDate.isAfter(LocalDate.now())) {
+        if (endDate.isAfter(CenterTime.today())) {
             throw new BusinessException(
                     ErrorCode.VALIDATION_ERROR,
                     "종료일은 오늘 이후일 수 없습니다."

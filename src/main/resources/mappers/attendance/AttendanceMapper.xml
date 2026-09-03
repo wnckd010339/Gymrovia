@@ -17,9 +17,11 @@
     </resultMap>
 
     <sql id="attendanceColumns">
+        <bind name="centerNow" value="@com.acorn.gymmanagement.common.time.CenterTime@now()"/>
         SELECT a.id AS attendance_id, a.member_id, m.name AS member_name, m.phone,
                mp.name AS membership_name, a.attendance_date, a.checked_in_at, a.checked_out_at,
-               TIMESTAMPDIFF(MINUTE, a.checked_in_at, COALESCE(a.checked_out_at, CURRENT_TIMESTAMP)) AS duration_minutes,
+               TIMESTAMPDIFF(MINUTE, a.checked_in_at, COALESCE(a.checked_out_at,
+                   CASE WHEN a.time_zone = 'Asia/Seoul' THEN #{centerNow} ELSE CURRENT_TIMESTAMP END)) AS duration_minutes,
                CASE WHEN a.checked_out_at IS NULL THEN 'IN_CENTER' ELSE 'CHECKED_OUT' END AS attendance_status
         FROM attendances a
         JOIN members m ON m.id = a.member_id
@@ -33,11 +35,12 @@
     </sql>
 
     <select id="findSummary" resultType="com.acorn.gymmanagement.attendance.dto.response.AttendanceSummaryResponse">
-        SELECT COUNT(*) AS checked_in_count,
+        <bind name="centerToday" value="@com.acorn.gymmanagement.common.time.CenterTime@today()"/>
+        SELECT COALESCE(SUM(CASE WHEN attendance_date = #{date} THEN 1 ELSE 0 END), 0) AS checked_in_count,
                COALESCE(SUM(CASE WHEN checked_out_at IS NULL THEN 1 ELSE 0 END), 0) AS current_count,
-               COALESCE(SUM(CASE WHEN checked_out_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS checked_out_count,
-               COALESCE(SUM(CASE WHEN checked_out_at IS NULL AND attendance_date &lt; CURRENT_DATE THEN 1 ELSE 0 END), 0) AS missing_checkout_count
-        FROM attendances WHERE attendance_date = #{date}
+               COALESCE(SUM(CASE WHEN attendance_date = #{date} AND checked_out_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS checked_out_count,
+               COALESCE(SUM(CASE WHEN checked_out_at IS NULL AND attendance_date &lt; #{centerToday} THEN 1 ELSE 0 END), 0) AS missing_checkout_count
+        FROM attendances
     </select>
 
     <select id="findCurrentAttendances" resultMap="AttendanceResult">
@@ -50,9 +53,10 @@
     </select>
 
     <select id="findHistory" resultMap="AttendanceResult">
+        <bind name="resolvedDate" value="_parameter.searchDate()"/>
         <include refid="attendanceColumns"/>
         <where>
-            a.attendance_date = #{date}
+            a.attendance_date = #{resolvedDate}
             <if test="keyword != null and keyword != ''">
                 AND (m.name LIKE CONCAT('%', #{keyword}, '%') OR m.phone LIKE CONCAT('%', #{keyword}, '%'))
             </if>
@@ -78,8 +82,10 @@
 
     <update id="checkout">
         UPDATE attendances
-        SET checked_out_at = #{checkedOutAt}, updated_at = CURRENT_TIMESTAMP
-        WHERE id = #{attendanceId} AND checked_out_at IS NULL AND checked_in_at &lt;= #{checkedOutAt}
+        SET checked_out_at = CASE WHEN time_zone = 'Asia/Seoul' THEN #{checkedOutAt} ELSE #{legacyCheckedOutAt} END,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{attendanceId} AND checked_out_at IS NULL
+          AND checked_in_at &lt;= CASE WHEN time_zone = 'Asia/Seoul' THEN #{checkedOutAt} ELSE #{legacyCheckedOutAt} END
     </update>
 
     <select id="findActiveMemberIdByUserId" resultType="long">
@@ -121,7 +127,7 @@
     </select>
 
     <insert id="insertAttendance" useGeneratedKeys="true" keyProperty="attendanceId" keyColumn="id">
-        INSERT INTO attendances(member_id, attendance_date, checked_in_at)
-        VALUES(#{memberId}, #{attendanceDate}, #{checkedInAt})
+        INSERT INTO attendances(member_id, attendance_date, checked_in_at, time_zone)
+        VALUES(#{memberId}, #{attendanceDate}, #{checkedInAt}, 'Asia/Seoul')
     </insert>
 </mapper>

@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import com.acorn.gymmanagement.common.time.CenterTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +32,7 @@ public class DashboardService {
         int changeRate = summary.yesterdayCheckInCount() == 0
                 ? (summary.todayCheckInCount() == 0 ? 0 : 100)
                 : (int) Math.round((summary.todayCheckInCount() - summary.yesterdayCheckInCount()) * 100.0 / summary.yesterdayCheckInCount());
-        String dateLabel = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy년 M월 d일 EEEE", Locale.KOREAN));
+        String dateLabel = CenterTime.today().format(DateTimeFormatter.ofPattern("yyyy년 M월 d일 EEEE", Locale.KOREAN));
         return new DashboardResponse(dateLabel, summary, changeRate, chart,
                 dashboardMapper.findRecentActivities(), dashboardMapper.findExpiringMemberships());
     }

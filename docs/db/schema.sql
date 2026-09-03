@@ -400,6 +400,7 @@ CREATE TABLE attendances (
     attendance_date DATE NOT NULL,
     checked_in_at DATETIME NOT NULL,
     checked_out_at DATETIME NULL,
+    time_zone VARCHAR(32) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_attendance_member FOREIGN KEY (member_id) REFERENCES members (id),

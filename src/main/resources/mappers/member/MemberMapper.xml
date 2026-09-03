@@ -448,6 +448,7 @@
 
     <select id="findHomeSummaryByUserId"
             resultType="com.acorn.gymmanagement.member.dto.response.MemberHomeSummaryResponse">
+        <bind name="centerToday" value="@com.acorn.gymmanagement.common.time.CenterTime@today()"/>
         SELECT
             m.id AS member_id,
             m.name AS member_name,
@@ -461,15 +462,15 @@
                 SELECT COUNT(DISTINCT a.attendance_date)
                 FROM attendances a
                 WHERE a.member_id = m.id
-                  AND a.attendance_date &gt;= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
-                  AND a.attendance_date &lt; DATE_ADD(DATE_FORMAT(CURRENT_DATE, '%Y-%m-01'), INTERVAL 1 MONTH)
+                  AND a.attendance_date &gt;= DATE_FORMAT(#{centerToday}, '%Y-%m-01')
+                  AND a.attendance_date &lt; DATE_ADD(DATE_FORMAT(#{centerToday}, '%Y-%m-01'), INTERVAL 1 MONTH)
             ) AS monthly_attendance_count,
             (
                 SELECT COUNT(DISTINCT a.attendance_date)
                 FROM attendances a
                 WHERE a.member_id = m.id
-                  AND a.attendance_date &gt;= DATE_SUB(DATE_FORMAT(CURRENT_DATE, '%Y-%m-01'), INTERVAL 1 MONTH)
-                  AND a.attendance_date &lt; DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
+                  AND a.attendance_date &gt;= DATE_SUB(DATE_FORMAT(#{centerToday}, '%Y-%m-01'), INTERVAL 1 MONTH)
+                  AND a.attendance_date &lt; DATE_FORMAT(#{centerToday}, '%Y-%m-01')
             ) AS previous_month_attendance_count,
             (
                 SELECT mp.name
@@ -535,7 +536,6 @@
         JOIN members m ON m.id = a.member_id
         WHERE m.user_id = #{userId}
           AND a.checked_out_at IS NULL
-          AND a.attendance_date = CURRENT_DATE
         ORDER BY a.checked_in_at DESC
         LIMIT 1
     </select>

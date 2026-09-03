@@ -91,7 +91,7 @@ class StatisticsPeriodTest {
     @Test
     void rejectsFutureEndDate() {
         LocalDate futureDate =
-                LocalDate.now().plusDays(1);
+                com.acorn.gymmanagement.common.time.CenterTime.today().plusDays(1);
 
         BusinessException exception =
                 assertThrows(

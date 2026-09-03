@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.time.LocalDate;
+import com.acorn.gymmanagement.common.time.CenterTime;
 
 @Service
 @RequiredArgsConstructor
@@ -47,7 +47,7 @@ public class MemberService {
                 : memberMapper.findTodayRoutineExercises(routine.routineId());
 
         return new MemberHomeView(
-                LocalDate.now(),
+                CenterTime.today(),
                 WEEKLY_WORKOUT_GOAL,
                 summary,
                 memberMapper.findOpenAttendanceByUserId(userId).orElse(null),

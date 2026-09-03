@@ -2,30 +2,32 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.acorn.gymmanagement.dashboard.mapper.DashboardMapper">
     <select id="findSummary" resultType="com.acorn.gymmanagement.dashboard.dto.response.DashboardSummaryResponse">
+        <bind name="centerToday" value="@com.acorn.gymmanagement.common.time.CenterTime@today()"/>
         SELECT
-          (SELECT COUNT(*) FROM attendances WHERE attendance_date = CURRENT_DATE) AS today_check_in_count,
-          (SELECT COUNT(*) FROM attendances WHERE attendance_date = CURRENT_DATE - INTERVAL 1 DAY) AS yesterday_check_in_count,
+          (SELECT COUNT(*) FROM attendances WHERE attendance_date = #{centerToday}) AS today_check_in_count,
+          (SELECT COUNT(*) FROM attendances WHERE attendance_date = #{centerToday} - INTERVAL 1 DAY) AS yesterday_check_in_count,
           (SELECT COUNT(*) FROM member_memberships WHERE status = 'ACTIVE' AND CURRENT_DATE BETWEEN start_date AND end_date) AS active_membership_count,
           (SELECT COUNT(*) FROM members WHERE joined_at &gt;= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')) AS new_member_count,
           (SELECT COALESCE(SUM(p.amount), 0) FROM payments p WHERE p.status IN ('COMPLETED','PARTIALLY_REFUNDED','REFUNDED') AND p.paid_at &gt;= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01'))
           - (SELECT COALESCE(SUM(r.amount), 0) FROM refunds r WHERE r.status = 'COMPLETED' AND r.refunded_at &gt;= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')) AS monthly_sales,
           (SELECT COUNT(*) FROM member_memberships WHERE status = 'ACTIVE' AND end_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL 7 DAY) AS expiring_membership_count,
-          (SELECT COUNT(*) FROM attendances WHERE attendance_date = CURRENT_DATE AND checked_out_at IS NULL) AS current_count,
-          (SELECT COUNT(*) FROM attendances WHERE attendance_date = CURRENT_DATE AND checked_out_at IS NOT NULL) AS checked_out_count,
-          (SELECT COUNT(*) FROM attendances WHERE attendance_date = CURRENT_DATE AND checked_out_at IS NULL) AS open_attendance_alert_count,
+          (SELECT COUNT(*) FROM attendances WHERE checked_out_at IS NULL) AS current_count,
+          (SELECT COUNT(*) FROM attendances WHERE attendance_date = #{centerToday} AND checked_out_at IS NOT NULL) AS checked_out_count,
+          (SELECT COUNT(*) FROM attendances WHERE attendance_date = #{centerToday} AND checked_out_at IS NULL) AS open_attendance_alert_count,
           (SELECT COUNT(*) FROM members m WHERE m.status = 'ACTIVE' AND m.trainer_requested = TRUE
              AND NOT EXISTS (SELECT 1 FROM trainer_assignments ta WHERE ta.member_id = m.id AND ta.status = 'ACTIVE')) AS trainer_request_alert_count,
           (SELECT COUNT(*) FROM equipment WHERE status IN ('INSPECTION','REPAIR','UNAVAILABLE')) AS facility_alert_count,
-          ((SELECT EXISTS(SELECT 1 FROM attendances WHERE attendance_date = CURRENT_DATE AND checked_out_at IS NULL))
+          ((SELECT EXISTS(SELECT 1 FROM attendances WHERE attendance_date = #{centerToday} AND checked_out_at IS NULL))
            + (SELECT EXISTS(SELECT 1 FROM members m WHERE m.status = 'ACTIVE' AND m.trainer_requested = TRUE
                AND NOT EXISTS (SELECT 1 FROM trainer_assignments ta WHERE ta.member_id = m.id AND ta.status = 'ACTIVE')))
            + (SELECT EXISTS(SELECT 1 FROM equipment WHERE status IN ('INSPECTION','REPAIR','UNAVAILABLE')))) AS alert_count
     </select>
 
     <select id="findHourlyAttendance" resultType="com.acorn.gymmanagement.dashboard.dto.response.HourlyAttendanceCount">
+        <bind name="centerToday" value="@com.acorn.gymmanagement.common.time.CenterTime@today()"/>
         SELECT (FLOOR((HOUR(checked_in_at) - 6) / 3) * 3 + 6) AS hour, COUNT(*) AS count
         FROM attendances
-        WHERE attendance_date = CURRENT_DATE AND HOUR(checked_in_at) BETWEEN 6 AND 23
+        WHERE attendance_date = #{centerToday} AND HOUR(checked_in_at) BETWEEN 6 AND 23
         GROUP BY (FLOOR((HOUR(checked_in_at) - 6) / 3) * 3 + 6)
         ORDER BY hour
     </select>

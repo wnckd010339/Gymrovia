@@ -77,6 +77,7 @@ public class MemberPortalController {
                 memberPortalService.attendances(user.userId())
         );
 
+        model.addAttribute("today", com.acorn.gymmanagement.common.time.CenterTime.today());
         return "member/attendance";
     }
 

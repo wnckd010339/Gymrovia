@@ -17,7 +17,7 @@
         <p class="notice error" th:if="${errorMessage}" th:text="${errorMessage}"></p>
 
     <section class="attendance-hero">
-        <div th:if="${#lists.isEmpty(attendances) or attendances[0].attendanceDate != #temporals.createToday()}">
+        <div th:if="${#lists.isEmpty(attendances) or (attendances[0].attendanceDate != today and attendances[0].checkedOutAt != null)}">
                 <h2>오늘 아직 입실하지 않았어요</h2>
                 <p>휴대폰에서 회원 계정으로 로그인한 뒤 센터 출석 QR을 촬영해 주세요.</p>
                 <div class="qr-attendance-guide">
@@ -28,7 +28,7 @@
                         <li>QR 출석 확인 화면에서 체크인 절차를 완료합니다.</li>
                     </ol>
                 </div>
-            </div><div th:if="${!#lists.isEmpty(attendances) and attendances[0].attendanceDate == #temporals.createToday() and attendances[0].checkedOutAt == null}">
+            </div><div th:if="${!#lists.isEmpty(attendances) and attendances[0].checkedOutAt == null}">
             <h2 th:text="|${#temporals.format(attendances[0].checkedInAt, 'HH:mm')}에 체크인했어요|">체크인</h2>
             <p>운동이 끝나면 센터 QR을 다시 촬영해 체크아웃해 주세요.</p>
             <div class="qr-attendance-guide compact">
@@ -37,7 +37,7 @@
             </div>
         </div>
 
-        <div th:if="${!#lists.isEmpty(attendances) and attendances[0].attendanceDate == #temporals.createToday() and attendances[0].checkedOutAt != null}">
+        <div th:if="${!#lists.isEmpty(attendances) and attendances[0].attendanceDate == today and attendances[0].checkedOutAt != null}">
             <h2>오늘 출석을 완료했어요</h2>
             <p th:text="|${#temporals.format(attendances[0].checkedInAt, 'HH:mm')} 입실 · ${#temporals.format(attendances[0].checkedOutAt, 'HH:mm')} 퇴실|">완료</p>
         </div>

@@ -19,7 +19,9 @@ public interface AttendanceMapper {
     List<AttendanceListResponse> findHistory(AttendanceSearchCondition condition);
     Optional<AttendanceListResponse> findOpenAttendanceForUpdate(Long attendanceId);
     Optional<AttendanceListResponse> findOpenAttendanceForMemberForUpdate(Long memberId);
-    int checkout(@Param("attendanceId") Long attendanceId, @Param("checkedOutAt") LocalDateTime checkedOutAt);
+    int checkout(@Param("attendanceId") Long attendanceId,
+                 @Param("checkedOutAt") LocalDateTime checkedOutAt,
+                 @Param("legacyCheckedOutAt") LocalDateTime legacyCheckedOutAt);
 
     Optional<Long> findActiveMemberIdByUserId(Long userId);
 
