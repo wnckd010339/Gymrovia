@@ -144,11 +144,19 @@ public class PaymentOrderTransactionService {
             safeMessage = safeMessage.substring(0, 500);
         }
 
-        paymentOrderMapper.markFailed(
-                paymentOrderId,
-                failureCode,
-                safeMessage
-        );
+        int affectedRows =
+                paymentOrderMapper.markFailed(
+                        paymentOrderId,
+                        failureCode,
+                        safeMessage
+                );
+
+        if (affectedRows != 1) {
+            throw new BusinessException(
+                    ErrorCode.CONFLICT,
+                    "결제 실패 상태를 저장하지 못했습니다."
+            );
+        }
     }
 
     private void validateGatewayResult(
@@ -345,6 +353,45 @@ public class PaymentOrderTransactionService {
             throw new BusinessException(
                     ErrorCode.INTERNAL_ERROR,
                     "자동 취소 시간을 확인하지 못했습니다."
+            );
+        }
+    }
+
+    @Transactional
+    public void markApprovalUnknown(
+            Long paymentOrderId,
+            String failureCode,
+            String failureMessage
+    ) {
+        String safeCode =
+                failureCode == null || failureCode.isBlank()
+                        ? "APPROVAL_RESULT_UNKNOWN"
+                        : failureCode;
+
+        String safeMessage =
+                failureMessage == null || failureMessage.isBlank()
+                        ? "결제 승인 결과를 확인하지 못했습니다."
+                        : failureMessage;
+
+        if (safeCode.length() > 100) {
+            safeCode = safeCode.substring(0, 100);
+        }
+
+        if (safeMessage.length() > 500) {
+            safeMessage = safeMessage.substring(0, 500);
+        }
+
+        int affectedRows =
+                paymentOrderMapper.markApprovalUnknown(
+                        paymentOrderId,
+                        safeCode,
+                        safeMessage
+                );
+
+        if (affectedRows != 1) {
+            throw new BusinessException(
+                    ErrorCode.CONFLICT,
+                    "결제 결과 확인 대기 상태를 저장하지 못했습니다."
             );
         }
     }

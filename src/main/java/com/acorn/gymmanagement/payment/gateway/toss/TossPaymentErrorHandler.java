@@ -12,6 +12,7 @@ import java.io.IOException;
 import org.springframework.http.HttpRequest;
 import tools.jackson.core.JacksonException;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 
 @Slf4j
 @Component
@@ -19,6 +20,17 @@ import java.nio.charset.StandardCharsets;
 public class TossPaymentErrorHandler {
 
     private final ObjectMapper objectMapper;
+
+    private static final Set<String> DEFINITE_APPROVAL_REJECTIONS =
+            Set.of(
+                    "REJECT_CARD_COMPANY",
+                    "INVALID_REJECT_CARD",
+                    "INVALID_STOPPED_CARD",
+                    "INVALID_CARD_EXPIRATION",
+                    "EXCEED_MAX_CARD_INSTALLMENT_PLAN",
+                    "INVALID_CARD_INSTALLMENT_PLAN",
+                    "NOT_SUPPORTED_INSTALLMENT_PLAN_CARD_OR_MERCHANT"
+            );
 
     public void handle(
             HttpRequest request,
@@ -47,9 +59,24 @@ public class TossPaymentErrorHandler {
                 errorCode
         );
 
-        throw new PaymentGatewayException(
+        String message =
+                toUserMessage(errorCode, statusCode);
+
+        if (isDefinitelyRejected(
+                request,
+                statusCode,
+                errorCode
+        )) {
+            throw PaymentGatewayException.rejected(
+                    errorCode,
+                    message
+            );
+        }
+
+        throw PaymentGatewayException.unknown(
                 errorCode,
-                toUserMessage(errorCode, statusCode)
+                message,
+                null
         );
     }
 
@@ -142,5 +169,20 @@ public class TossPaymentErrorHandler {
         }
 
         return "결제 요청을 처리하지 못했습니다.";
+    }
+
+    private boolean isDefinitelyRejected(
+            HttpRequest request,
+            int statusCode,
+            String errorCode
+    ) {
+        boolean approvalRequest =
+                "/v1/payments/confirm".equals(
+                        request.getURI().getPath()
+                );
+
+        return approvalRequest
+                && statusCode == 400
+                && DEFINITE_APPROVAL_REJECTIONS.contains(errorCode);
     }
 }

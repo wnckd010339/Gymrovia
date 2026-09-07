@@ -152,7 +152,7 @@ class MemberPaymentOrderServiceTest {
                 approvalCommand();
 
         PaymentGatewayException gatewayException =
-                new PaymentGatewayException(
+                PaymentGatewayException.rejected(
                         "REJECT_CARD_COMPANY",
                         "카드사에서 결제를 거절했습니다."
                 );
@@ -359,6 +359,41 @@ class MemberPaymentOrderServiceTest {
                 "INTERNAL_APPROVAL_ERROR",
                 "결제 승인 결과를 처리하지 못했습니다."
         );
+    }
+
+    @Test
+    void preservesUnknownApprovalInsteadOfFailingOrCompensating() {
+        PaymentApprovalCommand command = approvalCommand();
+        when(transactionService.prepareApproval(USER_ID, ORDER_ID, PAYMENT_KEY, AMOUNT))
+                .thenReturn(command);
+        PaymentGatewayException exception = PaymentGatewayException.unknown(
+                "TOSS_NETWORK_ERROR", "응답 유실", null);
+        when(paymentGateway.confirm(PAYMENT_KEY, ORDER_ID, AMOUNT, IDEMPOTENCY_KEY))
+                .thenThrow(exception);
+
+        assertSame(exception, assertThrows(PaymentGatewayException.class,
+                () -> service.confirm(USER_ID, ORDER_ID, confirmRequest())));
+
+        verify(transactionService).markApprovalUnknown(PAYMENT_ORDER_ID, "TOSS_NETWORK_ERROR", "응답 유실");
+        verify(transactionService, never()).failApproval(any(), anyString(), anyString());
+        verify(transactionService, never()).completeApproval(any(), any());
+        verify(paymentGateway, never()).cancel(anyString(), any(), anyString(), anyString());
+    }
+
+    @Test
+    void preservesGatewayErrorWhenUnknownStateCannotBeSaved() {
+        when(transactionService.prepareApproval(USER_ID, ORDER_ID, PAYMENT_KEY, AMOUNT))
+                .thenReturn(approvalCommand());
+        PaymentGatewayException exception = PaymentGatewayException.unknown("TOSS_NETWORK_ERROR", "응답 유실", null);
+        RuntimeException persistenceError = new IllegalStateException("DB unavailable");
+        when(paymentGateway.confirm(PAYMENT_KEY, ORDER_ID, AMOUNT, IDEMPOTENCY_KEY)).thenThrow(exception);
+        org.mockito.Mockito.doThrow(persistenceError).when(transactionService)
+                .markApprovalUnknown(PAYMENT_ORDER_ID, "TOSS_NETWORK_ERROR", "응답 유실");
+
+        assertSame(exception, assertThrows(PaymentGatewayException.class,
+                () -> service.confirm(USER_ID, ORDER_ID, confirmRequest())));
+        assertSame(persistenceError, exception.getSuppressed()[0]);
+        verify(transactionService, never()).failApproval(any(), anyString(), anyString());
     }
 
     private ConfirmMemberPaymentOrderRequest confirmRequest() {

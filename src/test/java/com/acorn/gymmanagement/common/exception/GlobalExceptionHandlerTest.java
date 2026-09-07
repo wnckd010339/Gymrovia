@@ -20,6 +20,40 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void unknownPaymentResultReturnsConflictWithoutExposingProviderDetails() throws Exception {
+        var exception = com.acorn.gymmanagement.payment.gateway.PaymentGatewayException.unknown(
+                "TOSS_NETWORK_ERROR", "provider detail", null);
+        var result = handler.handlePaymentGateway(exception,
+                new MockHttpServletRequest("POST", "/api/member/payment-orders/order-1/confirm"),
+                new MockHttpServletResponse());
+        assertEquals(HttpStatus.CONFLICT, result.getStatusCode());
+        assertFalse(result.getBody().success());
+        assertEquals("PAYMENT_RESULT_UNKNOWN", result.getBody().error().code());
+        assertFalse(result.getBody().message().contains("provider detail"));
+    }
+
+    @Test
+    void definitePaymentRejectionPreservesErrorCode() throws Exception {
+        var exception = com.acorn.gymmanagement.payment.gateway.PaymentGatewayException.rejected(
+                "REJECT_CARD_COMPANY", "카드사 거절");
+        var result = handler.handlePaymentGateway(exception,
+                new MockHttpServletRequest("POST", "/api/member/payment-orders/order-1/confirm"),
+                new MockHttpServletResponse());
+        assertEquals(HttpStatus.BAD_GATEWAY, result.getStatusCode());
+        assertEquals("REJECT_CARD_COMPANY", result.getBody().error().code());
+    }
+
+    @Test
+    void unknownPaymentOnPageUsesHtmlErrorHandling() throws Exception {
+        var response = new MockHttpServletResponse();
+        assertNull(handler.handlePaymentGateway(
+                new com.acorn.gymmanagement.payment.gateway.PaymentGatewayException("UNKNOWN", "unknown"),
+                new MockHttpServletRequest("GET", "/member/payments"), response));
+        assertEquals(409, response.getStatus());
+        assertTrue(response.isCommitted());
+    }
+
+    @Test
     void apiBusinessExceptionReturnsJsonResponse() throws Exception {
         MockHttpServletRequest request =
                 new MockHttpServletRequest(

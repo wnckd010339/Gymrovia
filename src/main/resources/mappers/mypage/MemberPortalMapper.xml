@@ -51,22 +51,53 @@
         ORDER BY mm.start_date DESC, mm.id DESC
     </select>
     <select id="findAttendances" resultType="com.acorn.gymmanagement.mypage.dto.response.MemberAttendanceView">
-        SELECT a.id AS attendance_id, a.attendance_date, a.checked_in_at, a.checked_out_at FROM attendances a JOIN
-        members m ON m.id=a.member_id
-        WHERE m.user_id=#{userId} ORDER BY a.checked_in_at DESC LIMIT 30
+        SELECT
+            a.id AS
+            attendance_id,
+            a.attendance_date,
+            a.checked_in_at,
+            a.checked_out_at
+        FROM attendances a
+        JOIN members m
+            ON m.id=a.member_id
+        WHERE m.user_id=#{userId}
+        ORDER BY a.checked_in_at DESC LIMIT 30
     </select>
+
     <select id="findActiveRoutine" resultType="com.acorn.gymmanagement.mypage.dto.response.MemberRoutineView">
-        SELECT wr.id AS routine_id, wr.title, wr.description, wr.start_date, wr.end_date, re.exercise_name,
-        re.target_sets, re.target_reps_min, re.target_reps_max, re.target_weight,
-        COALESCE(rwg.day_of_week,re.day_of_week) AS day_of_week, re.display_order
-        FROM members m JOIN workout_routines wr ON wr.member_id=m.id LEFT JOIN routine_exercises re ON
-        re.routine_id=wr.id LEFT JOIN routine_workout_groups rwg ON rwg.id=re.workout_group_id
-        WHERE m.user_id=#{userId} AND wr.status='ACTIVE' AND wr.start_date &lt;= CURRENT_DATE AND (wr.end_date IS NULL
-        OR wr.end_date &gt;= CURRENT_DATE)
-        ORDER BY wr.start_date DESC, wr.id DESC, re.display_order, re.id
+        SELECT
+            wr.id AS routine_id,
+            wr.title,
+            wr.description,
+            wr.start_date,
+            wr.end_date,
+            re.exercise_name,
+            re.target_sets,
+            re.target_reps_min,
+            re.target_reps_max,
+            re.target_weight,
+            COALESCE(rwg.day_of_week,re.day_of_week) AS day_of_week,
+            re.display_order
+        FROM members m
+        JOIN workout_routines wr
+            ON wr.member_id=m.id
+        LEFT JOIN routine_exercises re
+            ON re.routine_id=wr.id
+        LEFT JOIN routine_workout_groups rwg
+            ON rwg.id=re.workout_group_id
+        WHERE m.user_id=#{userId}
+            AND wr.status='ACTIVE'
+            AND wr.start_date &lt;= CURRENT_DATE
+            AND (wr.end_date IS NULL
+                OR wr.end_date &gt;= CURRENT_DATE)
+        ORDER BY wr.start_date DESC,
+                 wr.id DESC,
+                 re.display_order, re.id
     </select>
+
     <select id="findWorkoutDays" resultType="com.acorn.gymmanagement.mypage.dto.response.MemberWorkoutDayView">
-        SELECT DATE(ws.started_at) workout_date,
+        SELECT
+        DATE(ws.started_at) workout_date,
         GROUP_CONCAT(DISTINCT CASE WHEN wset.exercise_name REGEXP '스쿼트|레그|런지|데드리프트|힙|카프' THEN '하체' WHEN
         wset.exercise_name REGEXP '벤치|체스트|푸시업|딥스|플라이|삼두|트라이셉스' THEN '가슴 + 삼두' WHEN wset.exercise_name REGEXP
         '로우|랫풀|풀업|등|이두|바이셉스' THEN '등 + 이두' WHEN wset.exercise_name REGEXP '숄더|어깨|레터럴|오버헤드' THEN '어깨' WHEN
@@ -77,8 +108,10 @@
         wset.session_id=ws.id
         WHERE m.user_id=#{userId} GROUP BY DATE(ws.started_at) ORDER BY workout_date DESC LIMIT 30
     </select>
+
     <select id="findWorkoutsByDate" resultType="com.acorn.gymmanagement.mypage.dto.response.MemberWorkoutDetailView">
-        SELECT ws.id session_id,COALESCE(wr.title,'개인 운동')
+        SELECT
+        ws.id session_id,COALESCE(wr.title,'개인 운동')
         routine_title,ws.started_at,ws.ended_at,wset.exercise_name,COUNT(wset.id) sets,MAX(wset.weight)
         weight,MAX(wset.reps) reps,ws.memo
         FROM members m JOIN workout_sessions ws ON ws.member_id=m.id LEFT JOIN workout_routines wr ON
@@ -87,6 +120,7 @@
         GROUP BY ws.id,wr.title,ws.started_at,ws.ended_at,wset.exercise_name,ws.memo ORDER BY
         ws.started_at,wset.exercise_name
     </select>
+
     <select id="findPayments" resultType="com.acorn.gymmanagement.mypage.dto.response.MemberPaymentView">
         SELECT * FROM (
         SELECT p.id AS transaction_id, 'PAYMENT' AS transaction_type, mp.name AS product_name, p.payment_method,
@@ -100,6 +134,7 @@
         WHERE m.user_id=#{userId}
         ) history ORDER BY occurred_at DESC, transaction_id DESC
     </select>
+
     <select id="findProfile" resultType="com.acorn.gymmanagement.mypage.dto.response.MemberProfileView">
         <bind name="centerToday" value="@com.acorn.gymmanagement.common.time.CenterTime@today()"/>
         SELECT m.id AS member_id, lc.login_id, m.name, m.phone, m.birth_date, m.gender,
@@ -119,46 +154,66 @@
         LEFT JOIN user_local_credentials lc ON lc.user_id=u.id
         WHERE m.user_id=#{userId} AND m.status='ACTIVE'
     </select>
+
     <update id="updateMemberProfile">
         UPDATE members SET name=#{form.name}, phone=#{form.phone}, birth_date=#{form.birthDate},
         gender=#{form.gender}, updated_at=CURRENT_TIMESTAMP
         WHERE user_id=#{userId} AND status='ACTIVE'
     </update>
+
     <update id="updateUserEmail">
         UPDATE users SET email=#{email}, updated_at=CURRENT_TIMESTAMP WHERE id=#{userId}
     </update>
+
     <select id="findWorkoutForEdit" resultType="com.acorn.gymmanagement.mypage.dto.response.MemberWorkoutEditView">
         SELECT ws.id AS session_id, ws.routine_id, ws.started_at, ws.ended_at, ws.memo
         FROM workout_sessions ws JOIN members m ON m.id=ws.member_id
         WHERE m.user_id=#{userId} AND ws.id=#{sessionId}
     </select>
+
     <select id="findWorkoutExercises"
             resultType="com.acorn.gymmanagement.mypage.dto.response.MemberWorkoutExerciseView">SELECT ws.id
         session_id,wset.exercise_name,COUNT(*) sets,MAX(wset.weight) weight,MAX(wset.reps) reps FROM workout_sessions ws
         JOIN members m ON m.id=ws.member_id JOIN workout_sets wset ON wset.session_id=ws.id WHERE m.user_id=#{userId}
         AND ws.id=#{sessionId} GROUP BY ws.id,wset.exercise_name ORDER BY MIN(wset.id)
     </select>
+
     <insert id="insertWorkoutSession" useGeneratedKeys="true" keyProperty="sessionId" keyColumn="id">
         INSERT INTO workout_sessions(member_id, routine_id, started_at, ended_at, memo) VALUES(#{memberId},
         #{routineId}, #{startedAt}, #{endedAt}, #{memo})
     </insert>
+
     <insert id="insertWorkoutSet">INSERT INTO workout_sets(session_id, exercise_name, set_number, weight, reps,
         completed) VALUES(#{sessionId}, #{exerciseName}, #{setNumber}, #{weight}, #{reps}, TRUE)
     </insert>
+
     <update id="updateWorkoutSession">UPDATE workout_sessions SET routine_id=#{routineId}, started_at=#{startedAt},
         ended_at=#{endedAt}, memo=#{memo}, updated_at=CURRENT_TIMESTAMP WHERE id=#{sessionId} AND member_id=#{memberId}
     </update>
+
     <delete id="deleteWorkoutSets">DELETE FROM workout_sets WHERE session_id=#{sessionId}</delete>
+
     <delete id="deleteWorkoutSession">
         DELETE ws FROM workout_sessions ws
         JOIN members m ON m.id = ws.member_id
         WHERE ws.id = #{sessionId} AND m.user_id = #{userId}
     </delete>
-    <delete id="deleteWorkoutSetsByDate">DELETE wset FROM workout_sets wset JOIN workout_sessions ws ON
-        ws.id=wset.session_id JOIN members m ON m.id=ws.member_id WHERE m.user_id=#{userId} AND
-        DATE(ws.started_at)=#{workoutDate}
+
+    <delete id="deleteWorkoutSetsByDate">
+        DELETE wset FROM workout_sets wset
+        JOIN workout_sessions ws
+            ON ws.id=wset.session_id
+        JOIN members m
+            ON m.id=ws.member_id
+        WHERE m.user_id=#{userId}
+        AND DATE(ws.started_at)=#{workoutDate}
     </delete>
-    <delete id="deleteWorkoutSessionsByDate">DELETE ws FROM workout_sessions ws JOIN members m ON m.id=ws.member_id
-        WHERE m.user_id=#{userId} AND DATE(ws.started_at)=#{workoutDate}
+
+    <delete id="deleteWorkoutSessionsByDate">
+        DELETE ws FROM workout_sessions ws
+        JOIN members m
+            ON m.id=ws.member_id
+        WHERE m.user_id=#{userId}
+        AND DATE(ws.started_at)=#{workoutDate}
     </delete>
 </mapper>

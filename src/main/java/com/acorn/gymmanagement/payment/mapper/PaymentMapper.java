@@ -65,4 +65,10 @@ public interface PaymentMapper {
             @Param("paymentId") Long paymentId,
             @Param("status") PaymentStatus status
     );
+
+    int keepRefundPending(
+            @Param("refundId") Long refundId,
+            @Param("failureCode") String failureCode,
+            @Param("failureMessage") String failureMessage
+    );
 }

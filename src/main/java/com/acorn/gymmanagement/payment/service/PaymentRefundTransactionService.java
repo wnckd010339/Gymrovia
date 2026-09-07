@@ -267,4 +267,43 @@ public class PaymentRefundTransactionService {
             );
         }
     }
+
+    @Transactional
+    public void keepPending(
+            Long refundId,
+            String failureCode,
+            String failureMessage
+    ) {
+        String safeCode =
+                failureCode == null || failureCode.isBlank()
+                        ? "REFUND_RESULT_UNKNOWN"
+                        : failureCode;
+
+        String safeMessage =
+                failureMessage == null || failureMessage.isBlank()
+                        ? "환불 처리 결과를 확인하지 못했습니다."
+                        : failureMessage;
+
+        if (safeCode.length() > 100) {
+            safeCode = safeCode.substring(0, 100);
+        }
+
+        if (safeMessage.length() > 500) {
+            safeMessage = safeMessage.substring(0, 500);
+        }
+
+        int affectedRows =
+                paymentMapper.keepRefundPending(
+                        refundId,
+                        safeCode,
+                        safeMessage
+                );
+
+        if (affectedRows != 1) {
+            throw new BusinessException(
+                    ErrorCode.CONFLICT,
+                    "환불 결과 확인 대기 사유를 저장하지 못했습니다."
+            );
+        }
+    }
 }

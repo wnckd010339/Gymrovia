@@ -230,4 +230,14 @@
         WHERE id = #{id}
             AND status = 'COMPENSATING'
     </update>
+
+    <update id="markApprovalUnknown">
+        UPDATE payment_orders
+        SET status = 'APPROVAL_UNKNOWN',
+            failure_code = #{failureCode},
+            failure_message = #{failureMessage},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+            AND status = 'APPROVING'
+    </update>
 </mapper>

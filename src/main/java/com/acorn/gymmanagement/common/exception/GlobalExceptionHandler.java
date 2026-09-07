@@ -75,20 +75,38 @@ public class GlobalExceptionHandler {
             HttpServletRequest request,
             HttpServletResponse response
     ) throws IOException {
-        HttpStatus status = HttpStatus.BAD_GATEWAY;
+        boolean outcomeUnknown =
+                exception.isOutcomeUnknown();
+
+        HttpStatus status =
+                outcomeUnknown
+                        ? HttpStatus.CONFLICT
+                        : HttpStatus.BAD_GATEWAY;
 
         if (!isApiRequest(request)) {
             response.sendError(status.value());
             return null;
         }
 
+        String message =
+                outcomeUnknown
+                        ? "요청이 처리되었을 수 있어 결과 확인이 필요합니다."
+                        : exception.getMessage();
+
+        String errorCode =
+                outcomeUnknown
+                        ? "PAYMENT_RESULT_UNKNOWN"
+                        : exception.getCode();
+
         return ResponseEntity
                 .status(status)
-                .body(ApiResponse.failure(
-                        exception.getMessage(),
-                        exception.getCode(),
-                        exception.getMessage()
-                ));
+                .body(
+                        ApiResponse.failure(
+                                message,
+                                errorCode,
+                                message
+                        )
+                );
     }
 
     private HttpStatus resolveStatus(

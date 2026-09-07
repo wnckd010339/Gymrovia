@@ -123,11 +123,25 @@ public class MemberPaymentOrderService {
                            command.idempotencyKey()
                    );
        } catch (PaymentGatewayException exception) {
-           transactionService.failApproval(
-                   command.paymentOrderId(),
-                   exception.getCode(),
-                   exception.getMessage()
-           );
+           try {
+               if (exception.isOutcomeUnknown()) {
+                   transactionService.markApprovalUnknown(
+                           command.paymentOrderId(),
+                           exception.getCode(),
+                           exception.getMessage()
+                   );
+
+               } else {
+                   transactionService.failApproval(
+                           command.paymentOrderId(),
+                           exception.getCode(),
+                           exception.getMessage()
+                   );
+               }
+
+           } catch (RuntimeException persistenceException) {
+               exception.addSuppressed(persistenceException);
+           }
 
            throw exception;
        }

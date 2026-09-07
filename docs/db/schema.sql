@@ -325,6 +325,7 @@ CREATE TABLE payment_orders (
         status IN (
                    'READY',
                    'APPROVING',
+                   'APPROVAL_UNKNOWN',
                    'PAID',
                    'FAILED',
                    'CANCELLED',

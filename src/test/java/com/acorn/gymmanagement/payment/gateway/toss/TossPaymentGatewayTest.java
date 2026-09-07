@@ -5,6 +5,8 @@ import com.acorn.gymmanagement.payment.gateway.PaymentCancellationResult;
 import com.acorn.gymmanagement.payment.gateway.PaymentGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,8 @@ import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
@@ -334,6 +338,7 @@ class TossPaymentGatewayTest {
                 "INVALID_GATEWAY_RESPONSE",
                 exception.getCode()
         );
+        assertTrue(exception.isOutcomeUnknown());
 
         assertEquals(
                 "승인 응답의 결제 금액이 일치하지 않습니다.",
@@ -366,6 +371,67 @@ class TossPaymentGatewayTest {
                 exception.getMessage()
         );
 
+        server.verify();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "400,REJECT_CARD_COMPANY,false",
+            "400,INVALID_REJECT_CARD,false",
+            "400,ALREADY_PROCESSED_PAYMENT,true",
+            "400,PROVIDER_ERROR,true",
+            "409,IDEMPOTENT_REQUEST_PROCESSING,true",
+            "500,REJECT_CARD_COMPANY,true"
+    })
+    void distinguishesDefiniteRejectionFromUnknownOutcome(int status, String code, boolean unknown) {
+        server.expect(requestTo(BASE_URL + "/v1/payments/confirm"))
+                .andRespond(withStatus(org.springframework.http.HttpStatusCode.valueOf(status))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"code\":\"" + code + "\",\"message\":\"error\"}"));
+        var exception = assertThrows(PaymentGatewayException.class,
+                () -> gateway.confirm("payment-key-123", "order-123456", new BigDecimal("80000"), "key"));
+        assertEquals(unknown, exception.isOutcomeUnknown());
+        server.verify();
+    }
+
+    @Test
+    void networkFailurePreservesCauseAndUnknownOutcome() {
+        server.expect(requestTo(BASE_URL + "/v1/payments/confirm"))
+                .andRespond(request -> { throw new java.io.IOException("response lost"); });
+        var exception = assertThrows(PaymentGatewayException.class,
+                () -> gateway.confirm("payment-key-123", "order-123456", new BigDecimal("80000"), "key"));
+        assertTrue(exception.isOutcomeUnknown());
+        assertEquals("TOSS_NETWORK_ERROR", exception.getCode());
+        assertTrue(exception.getCause() instanceof org.springframework.web.client.RestClientException);
+        server.verify();
+    }
+
+    @Test
+    void malformedProviderErrorIsUnknown() {
+        server.expect(requestTo(BASE_URL + "/v1/payments/confirm"))
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.TEXT_HTML).body("<html>error</html>"));
+        var exception = assertThrows(PaymentGatewayException.class,
+                () -> gateway.confirm("payment-key-123", "order-123456", new BigDecimal("80000"), "key"));
+        assertTrue(exception.isOutcomeUnknown());
+        server.verify();
+    }
+
+    @Test
+    void alreadyCanceledPaymentIsNotARejectedRefund() {
+        server.expect(requestTo(BASE_URL + "/v1/payments/payment-key-123/cancel"))
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"code\":\"ALREADY_CANCELED_PAYMENT\",\"message\":\"already canceled\"}"));
+        var exception = assertThrows(PaymentGatewayException.class,
+                () -> gateway.cancel("payment-key-123", new BigDecimal("80000"), "고객 요청", "key"));
+        assertTrue(exception.isOutcomeUnknown());
+        server.verify();
+    }
+
+    @Test
+    void preRequestValidationIsDefiniteRejection() {
+        var exception = assertThrows(PaymentGatewayException.class,
+                () -> gateway.confirm("payment-key-123", "order-123456", BigDecimal.ZERO, "key"));
+        assertFalse(exception.isOutcomeUnknown());
         server.verify();
     }
 

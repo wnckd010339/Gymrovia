@@ -433,12 +433,14 @@ public class TossPaymentGateway implements PaymentGateway {
     private <T> T execute(Supplier<T> request) {
         try {
             return request.get();
+
         } catch (PaymentGatewayException exception) {
             throw exception;
         } catch (RestClientException exception) {
-            throw new PaymentGatewayException(
+            throw PaymentGatewayException.unknown(
                     "TOSS_NETWORK_ERROR",
-                    "결제 서비스 통신 중 오류가 발생했습니다."
+                    "결제 처리 결과를 확인하지 못했습니다.",
+                    exception
             );
         }
     }
@@ -460,7 +462,7 @@ public class TossPaymentGateway implements PaymentGateway {
     private PaymentGatewayException invalidRequest(
             String message
     ) {
-        return new PaymentGatewayException(
+        return PaymentGatewayException.rejected(
                 "INVALID_GATEWAY_REQUEST",
                 message
         );

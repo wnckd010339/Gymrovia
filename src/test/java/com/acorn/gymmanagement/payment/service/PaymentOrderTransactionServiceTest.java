@@ -36,6 +36,34 @@ class PaymentOrderTransactionServiceTest {
     private PaymentOrderTransactionService service;
 
     @Test
+    void marksFailureExactlyOnceAndChecksAffectedRows() {
+        when(paymentOrderMapper.markFailed(1L, "REJECT_CARD_COMPANY", "거절")).thenReturn(1);
+        service.failApproval(1L, "REJECT_CARD_COMPANY", "거절");
+        verify(paymentOrderMapper).markFailed(1L, "REJECT_CARD_COMPANY", "거절");
+    }
+
+    @Test
+    void rejectsFailureUpdateWhenOrderStateHasChanged() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.acorn.gymmanagement.common.exception.BusinessException.class,
+                () -> service.failApproval(1L, "REJECT_CARD_COMPANY", "거절"));
+    }
+
+    @Test
+    void truncatesUnknownFailureDetailsToDatabaseLimits() {
+        when(paymentOrderMapper.markApprovalUnknown(1L, "C".repeat(100), "M".repeat(500))).thenReturn(1);
+        service.markApprovalUnknown(1L, "C".repeat(120), "M".repeat(600));
+        verify(paymentOrderMapper).markApprovalUnknown(1L, "C".repeat(100), "M".repeat(500));
+    }
+
+    @Test
+    void rejectsUnknownUpdateWhenOrderStateHasChanged() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.acorn.gymmanagement.common.exception.BusinessException.class,
+                () -> service.markApprovalUnknown(1L, null, null));
+    }
+
+    @Test
     void 간편결제_승인결과를_EASY_PAY로_저장한다() {
         LocalDateTime approvedAt =
                 LocalDateTime.of(2026, 9, 1, 12, 0);

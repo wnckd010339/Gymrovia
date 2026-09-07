@@ -365,4 +365,12 @@
         WHERE id = #{refundId}
              AND status = 'PENDING'
     </update>
+
+    <update id="keepRefundPending">
+        UPDATE refunds
+        SET failure_code = #{failureCode},
+            failure_message = #{failureMessage}
+        WHERE id = #{refundId}
+            AND status = 'PENDING'
+    </update>
 </mapper>

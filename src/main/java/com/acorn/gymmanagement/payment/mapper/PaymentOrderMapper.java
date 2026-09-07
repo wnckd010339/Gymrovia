@@ -75,4 +75,10 @@ public interface PaymentOrderMapper {
             @Param("failureCode") String failureCode,
             @Param("failureMessage") String failureMessage
     );
+
+    int markApprovalUnknown(
+            @Param("id") Long id,
+            @Param("failureCode") String failureCode,
+            @Param("failureMessage") String failureMessage
+    );
 }
