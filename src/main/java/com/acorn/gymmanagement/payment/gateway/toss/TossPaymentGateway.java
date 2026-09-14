@@ -8,13 +8,12 @@ import com.acorn.gymmanagement.payment.gateway.toss.dto.request.TossCancelReques
 import com.acorn.gymmanagement.payment.gateway.toss.dto.request.TossConfirmRequest;
 import com.acorn.gymmanagement.payment.gateway.toss.dto.response.TossCancelResponse;
 import com.acorn.gymmanagement.payment.gateway.toss.dto.response.TossPaymentResponse;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -42,22 +41,11 @@ public class TossPaymentGateway implements PaymentGateway {
     public TossPaymentGateway(
             TossPaymentProperties properties,
             TossPaymentErrorHandler errorHandler,
-            RestClient.Builder restClientBuilder
+            @Qualifier("tossRestClient") RestClient restClient
     ) {
         this.properties = properties;
         this.errorHandler = errorHandler;
-
-        this.restClient = restClientBuilder
-                .baseUrl(properties.baseUrl())
-                .defaultHeader(
-                        HttpHeaders.CONTENT_TYPE,
-                        MediaType.APPLICATION_JSON_VALUE
-                )
-                .defaultHeader(
-                        HttpHeaders.ACCEPT,
-                        MediaType.APPLICATION_JSON_VALUE
-                )
-                .build();
+        this.restClient = restClient;
     }
 
     @Override

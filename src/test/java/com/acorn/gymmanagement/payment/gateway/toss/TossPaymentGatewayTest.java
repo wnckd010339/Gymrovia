@@ -17,6 +17,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 
@@ -48,7 +49,9 @@ class TossPaymentGatewayTest {
                         "test_secret_key",
                         BASE_URL,
                         "http://localhost:8080/member/payments/success",
-                        "http://localhost:8080/member/payments/fail"
+                        "http://localhost:8080/member/payments/fail",
+                        Duration.ofSeconds(3),
+                        Duration.ofSeconds(10)
                 );
 
         TossPaymentErrorHandler errorHandler =
@@ -63,10 +66,22 @@ class TossPaymentGatewayTest {
                 .bindTo(restClientBuilder)
                 .build();
 
+        RestClient restClient = restClientBuilder
+                .baseUrl(BASE_URL)
+                .defaultHeader(
+                        HttpHeaders.CONTENT_TYPE,
+                        MediaType.APPLICATION_JSON_VALUE
+                )
+                .defaultHeader(
+                        HttpHeaders.ACCEPT,
+                        MediaType.APPLICATION_JSON_VALUE
+                )
+                .build();
+
         gateway = new TossPaymentGateway(
                 properties,
                 errorHandler,
-                restClientBuilder
+                restClient
         );
     }
 
