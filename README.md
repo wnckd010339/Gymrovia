@@ -113,26 +113,17 @@ flowchart LR
 
 ## 배포 및 검증
 
-PR과 `main` push에서는 GitHub Actions가 Gradle 전체 테스트를 실행합니다. `main` 테스트가 성공하면 `linux/amd64`와 `linux/arm64` 이미지를 Docker Hub에 `sha-<Git 커밋>`과 `main` 태그로 게시합니다. 이미지 게시는 운영 서버 실행과 분리되어 있으므로 Git push만으로 EC2가 갱신되지는 않습니다.
-
-EC2 배포는 저장소의 `deploy/deploy.sh`를 사용해 특정 SHA 이미지를 수동으로 선택합니다. `deploy/env.example`을 참고해 서버의 `/opt/gymrovia/.env.docker`에 운영 환경변수를 준비하고 Docker Hub에 로그인한 뒤 다음과 같이 실행합니다. 예시 파일의 자리표시자는 실제 값으로 바꾸며 운영 비밀값 파일은 커밋하지 않습니다.
+1. PR과 `main` push마다 GitHub Actions에서 전체 테스트를 실행합니다.
+2. `main` 테스트가 성공하면 Docker Hub에 AMD64·ARM64 이미지를 SHA 태그로 게시합니다.
+3. EC2에서는 배포할 SHA 이미지를 지정해 수동으로 실행합니다.
 
 ```bash
-chmod +x deploy/deploy.sh
 ./deploy/deploy.sh <Docker Hub 사용자명>/gymrovia sha-<40자리 Git 커밋>
 ```
 
-스크립트는 이미지를 먼저 내려받고, 기존 `gymrovia` 컨테이너를 `gymrovia-rollback`으로 보존한 뒤 새 컨테이너를 `127.0.0.1:8080`에 실행합니다. 최대 2분간 `/actuator/health`의 `UP` 응답을 확인하며 실패하면 직전 컨테이너를 복원합니다. `main` 태그는 최신 이미지 확인용이며 실제 배포에는 변경 불가능한 SHA 태그를 사용합니다.
+배포 스크립트는 `/actuator/health`를 확인하고 실패하면 직전 컨테이너를 복원합니다. 운영 환경변수는 `deploy/env.example`을 참고해 서버에서 관리하며 Git push만으로 EC2가 자동 배포되지는 않습니다.
 
-| 구분 | 2026.09.03 확인 결과 |
-| --- | --- |
-| 인증 | 일반·Google 로그인 및 Google 가입 흐름 |
-| 결제 | 테스트 결제·회원권 활성화·전액 환불, Toss 취소 상태와 금액 일치 |
-| 출석 | QR 입실·퇴실·이용 시간, 한국 시간 표시, 관리자 화면 반영 |
-| HTTPS | 인증서 적용, 갱신 모의 테스트 성공, 자동 갱신 타이머 등록 |
-| 운영 설정 | 컨테이너 재시작 정책, Docker·Nginx 자동 시작, RDS 백업·보안 그룹, 비용 알림 |
-
-실제 서버 재부팅과 백업 복원 훈련은 아직 수행하지 않았습니다. 컨테이너 교체와 Health Check 동안 잠시 중단될 수 있습니다. 컨테이너 복구는 애플리케이션 버전만 되돌리므로, Flyway가 호환되지 않는 스키마를 적용한 뒤에는 구버전 이미지로의 복구가 보장되지 않습니다.
+> 컨테이너 교체 중 잠시 중단될 수 있으며, DB 스키마 변경 이후에는 이미지 복구만으로 이전 상태가 보장되지 않습니다.
 
 ## 애플리케이션 구조
 
