@@ -73,6 +73,10 @@ Gymrovia는 회원, 회원권·결제, 출석, 예약, 운동, 시설 업무를 
 | 오류 응답 | 일반 화면은 HTML, API는 공통 JSON으로 분리 |
 | 배포 환경 차이 | MySQL 테이블명 대소문자 일치, 결제 만료 응답에 시간대 오프셋 적용 |
 | 출석 시간 | 한국 시간 기준 처리와 날짜 집계, 기존 기록은 시간 기준을 추정해 일괄 변경하지 않음 |
+| 외부 API 안정성 | Toss Payments 연결 3초·응답 10초 타임아웃과 설정값 검증 적용 |
+| 테스트 자동화 | PR과 main push마다 Gradle 전체 테스트 실행, 실패 리포트 보관 |
+| DB 통합 검증 | Testcontainers의 실제 MySQL 8에서 Flyway와 MyBatis 트랜잭션 동작 검증 |
+| 이미지 버전 관리 | 테스트 성공 후 커밋 SHA 태그의 AMD64·ARM64 이미지를 Docker Hub에 게시 |
 
 ## 기술 스택
 
@@ -83,7 +87,7 @@ Gymrovia는 회원, 회원권·결제, 출석, 예약, 운동, 시설 업무를 
 | Persistence | MyBatis, MySQL, Flyway |
 | Frontend | Thymeleaf, HTML, CSS, JavaScript |
 | Payment | Toss Payments API·SDK |
-| Build & Test | Gradle, JUnit 5, Mockito, H2 |
+| Build & Test | Gradle, JUnit 5, Mockito, H2, Testcontainers |
 | Deployment | Docker, Docker Hub, AWS EC2, Amazon RDS |
 | Network & TLS | Nginx, 도메인 DNS, Let's Encrypt · Certbot |
 
@@ -109,7 +113,16 @@ flowchart LR
 
 ## 배포 및 검증
 
-**현재는 수동 Docker 배포입니다.** 로컬 테스트 → 이미지 빌드·Docker Hub push → EC2 pull·컨테이너 교체 → Flyway 로그·Health Check → 기능 확인 순서로 진행합니다. Git push만으로 운영 서버가 갱신되지는 않습니다.
+PR과 `main` push에서는 GitHub Actions가 Gradle 전체 테스트를 실행합니다. `main` 테스트가 성공하면 `linux/amd64`와 `linux/arm64` 이미지를 Docker Hub에 `sha-<Git 커밋>`과 `main` 태그로 게시합니다. 이미지 게시는 운영 서버 실행과 분리되어 있으므로 Git push만으로 EC2가 갱신되지는 않습니다.
+
+EC2 배포는 저장소의 `deploy/deploy.sh`를 사용해 특정 SHA 이미지를 수동으로 선택합니다. `deploy/env.example`을 참고해 서버의 `/opt/gymrovia/.env.docker`에 운영 환경변수를 준비하고 Docker Hub에 로그인한 뒤 다음과 같이 실행합니다. 예시 파일의 자리표시자는 실제 값으로 바꾸며 운영 비밀값 파일은 커밋하지 않습니다.
+
+```bash
+chmod +x deploy/deploy.sh
+./deploy/deploy.sh <Docker Hub 사용자명>/gymrovia sha-<40자리 Git 커밋>
+```
+
+스크립트는 이미지를 먼저 내려받고, 기존 `gymrovia` 컨테이너를 `gymrovia-rollback`으로 보존한 뒤 새 컨테이너를 `127.0.0.1:8080`에 실행합니다. 최대 2분간 `/actuator/health`의 `UP` 응답을 확인하며 실패하면 직전 컨테이너를 복원합니다. `main` 태그는 최신 이미지 확인용이며 실제 배포에는 변경 불가능한 SHA 태그를 사용합니다.
 
 | 구분 | 2026.09.03 확인 결과 |
 | --- | --- |
@@ -119,7 +132,7 @@ flowchart LR
 | HTTPS | 인증서 적용, 갱신 모의 테스트 성공, 자동 갱신 타이머 등록 |
 | 운영 설정 | 컨테이너 재시작 정책, Docker·Nginx 자동 시작, RDS 백업·보안 그룹, 비용 알림 |
 
-실제 서버 재부팅과 백업 복원 훈련은 아직 수행하지 않았습니다. 컨테이너 교체 시 잠시 중단될 수 있으며, DB 변경 후에는 구버전 이미지로의 단순 교체만으로 안전한 복구가 보장되지 않습니다.
+실제 서버 재부팅과 백업 복원 훈련은 아직 수행하지 않았습니다. 컨테이너 교체와 Health Check 동안 잠시 중단될 수 있습니다. 컨테이너 복구는 애플리케이션 버전만 되돌리므로, Flyway가 호환되지 않는 스키마를 적용한 뒤에는 구버전 이미지로의 복구가 보장되지 않습니다.
 
 ## 애플리케이션 구조
 
@@ -149,6 +162,7 @@ Controller → Service → Mapper → XML Mapper → MySQL
 - 일반 화면과 API 예외 응답 분리 테스트
 - 트레이너 예약 잠금과 일정 충돌 차단 테스트
 - 결제 만료 시간대, 출석 시간·자정 경계·기존 기록 보존 테스트
+- Testcontainers MySQL에서 Flyway 마이그레이션, MyBatis 매핑 및 트랜잭션 롤백 테스트
 
 ```powershell
 .\gradlew.bat test
@@ -183,6 +197,8 @@ GOOGLE_CLIENT_ID=Google 클라이언트 ID
 GOOGLE_CLIENT_SECRET=Google 클라이언트 시크릿
 TOSS_CLIENT_KEY=Toss 테스트 클라이언트 키
 TOSS_SECRET_KEY=Toss 테스트 시크릿 키
+TOSS_CONNECT_TIMEOUT=3s
+TOSS_READ_TIMEOUT=10s
 ```
 
 ```powershell
@@ -191,7 +207,7 @@ TOSS_SECRET_KEY=Toss 테스트 시크릿 키
 
 ## 향후 개선
 
-- GitHub Actions 기반 자동 테스트, 이후 배포 자동화 검토
+- GitHub Environments 승인과 SSH를 이용한 EC2 배포 자동화 검토
 - 백업 복원·재부팅 복구 훈련과 장애 알림 보완
 - Gymrovia 브랜드 기준 화면 재촬영 및 시연 영상 정리
 
