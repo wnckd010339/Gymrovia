@@ -11,7 +11,6 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.mybatis.spring.transaction.SpringManagedTransactionFactory;
 import org.springframework.aop.framework.ProxyFactory;
@@ -22,89 +21,317 @@ import org.springframework.transaction.annotation.AnnotationTransactionAttribute
 import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.sql.DriverManager;
-import java.sql.SQLException;
+
 import java.math.BigDecimal;
-import java.util.UUID;
+
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.mysql.MySQLContainer;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
-/** Opt-in local MySQL test. Creates and removes only its own randomly named test database. */
-@EnabledIfEnvironmentVariable(named = "PAYMENT_TEST_MYSQL_SERVER", matches = ".+")
+@Testcontainers
 class PaymentStateMySqlIntegrationTest {
+
+    private static final String MYSQL_IMAGE =
+            "mysql:8.0.36";
+
+    @Container
+    private static final MySQLContainer MYSQL =
+            new MySQLContainer(MYSQL_IMAGE)
+                    .withDatabaseName(
+                            "gymrovia_payment_test"
+                    )
+                    .withUsername("test")
+                    .withPassword("test");
+
     @Test
-    void migrationAndRealTransactionalMappersPreserveUnknownOutcomes() throws Exception {
-        String server = System.getenv("PAYMENT_TEST_MYSQL_SERVER");
-        assertTrue(server.matches("jdbc:mysql://(localhost|127\\.0\\.0\\.1):[0-9]+/"),
-                "Only an explicit local MySQL server URL is allowed");
-        String username = System.getenv("PAYMENT_TEST_MYSQL_USERNAME");
-        String password = System.getenv("PAYMENT_TEST_MYSQL_PASSWORD");
-        String database = "gymrovia_payment_test_" + UUID.randomUUID().toString().replace("-", "");
-        String options = "?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Seoul";
-        try (var admin = DriverManager.getConnection(server + options, username, password);
-             var statement = admin.createStatement()) {
-            statement.execute("CREATE DATABASE " + database);
-            try {
-                String url = server + database + options;
-                Flyway.configure().dataSource(url, username, password).target("2").load().migrate();
-                var ds = new DriverManagerDataSource(url, username, password);
-                var jdbc = new JdbcTemplate(ds);
-                seed(jdbc);
-                assertThrows(org.springframework.dao.DataAccessException.class,
-                        () -> jdbc.update("UPDATE payment_orders SET status='APPROVAL_UNKNOWN' WHERE id=1"));
+    void migrationAndRealTransactionalMappersPreserveUnknownOutcomes()
+            throws Exception {
 
-                var flyway = Flyway.configure().dataSource(ds).load();
-                assertEquals(1, flyway.migrate().migrationsExecuted);
-                assertEquals("3", flyway.info().current().getVersion().getVersion());
-                assertEquals(0, flyway.migrate().migrationsExecuted);
+        String url =
+                MYSQL.getJdbcUrl()
+                        + "?allowPublicKeyRetrieval=true"
+                        + "&useSSL=false"
+                        + "&serverTimezone=Asia/Seoul";
 
-                Configuration configuration = new Configuration(new Environment("test",
-                        new SpringManagedTransactionFactory(), ds));
-                for (String resource : new String[]{"mappers/payment/PaymentOrderMapper.xml", "mappers/payment/PaymentMapper.xml"}) {
-                    try (var input = getClass().getClassLoader().getResourceAsStream(resource)) {
-                        assertNotNull(input);
-                        new XMLMapperBuilder(input, configuration, resource, configuration.getSqlFragments()).parse();
-                    }
-                }
-                var session = new SqlSessionTemplate(new SqlSessionFactoryBuilder().build(configuration));
-                var orders = session.getMapper(PaymentOrderMapper.class);
-                var payments = session.getMapper(PaymentMapper.class);
-                var txManager = new DataSourceTransactionManager(ds);
-                var orderService = transactional(new PaymentOrderTransactionService(orders, mock(PaymentService.class)), txManager);
-                var refundService = transactional(new PaymentRefundTransactionService(payments, mock(MembershipMapper.class)), txManager);
+        String username =
+                MYSQL.getUsername();
 
-                // Real service proxy + XML + MySQL: conditional updates commit and cannot overwrite PAID.
-                orderService.markApprovalUnknown(1L, "TOSS_NETWORK_ERROR", "response lost");
-                assertEquals("APPROVAL_UNKNOWN", jdbc.queryForObject("SELECT status FROM payment_orders WHERE id=1", String.class));
-                assertThrows(BusinessException.class, () -> orderService.markApprovalUnknown(2L, "UNKNOWN", "lost"));
-                assertEquals("PAID", jdbc.queryForObject("SELECT status FROM payment_orders WHERE id=2", String.class));
-                orderService.failApproval(3L, "REJECT_CARD_COMPANY", "rejected");
-                assertEquals("FAILED", jdbc.queryForObject("SELECT status FROM payment_orders WHERE id=3", String.class));
+        String password =
+                MYSQL.getPassword();
 
-                refundService.keepPending(1L, "TOSS_NETWORK_ERROR", "response lost");
-                assertTrue(payments.existsPendingRefundByPaymentId(1L));
-                assertEquals("PENDING", jdbc.queryForObject("SELECT status FROM refunds WHERE id=1", String.class));
-                assertEquals("TOSS_NETWORK_ERROR", jdbc.queryForObject("SELECT failure_code FROM refunds WHERE id=1", String.class));
-                var blocked = assertThrows(BusinessException.class, () -> refundService.prepare(
-                        1L, new CreateRefundRequest(new BigDecimal("10000"), "another refund"), 2L));
-                assertEquals("이미 처리 중인 환불 요청이 있습니다.", blocked.getMessage());
-                assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM refunds", Integer.class));
+        Flyway.configure()
+                .dataSource(
+                        url,
+                        username,
+                        password
+                )
+                .target("2")
+                .load()
+                .migrate();
 
-                // Participates in surrounding transactions; rollback must undo both records.
-                assertThrows(IllegalStateException.class, () -> new TransactionTemplate(txManager).executeWithoutResult(tx -> {
-                    orderService.markApprovalUnknown(4L, "UNKNOWN", "lost");
-                    refundService.keepPending(1L, "ROLLBACK_MARKER", "rollback");
-                    throw new IllegalStateException("simulate later DB failure");
-                }));
-                assertEquals("APPROVING", jdbc.queryForObject("SELECT status FROM payment_orders WHERE id=4", String.class));
-                assertEquals("TOSS_NETWORK_ERROR", jdbc.queryForObject("SELECT failure_code FROM refunds WHERE id=1", String.class));
-            } finally {
-                // database is generated above, never read from user configuration.
-                if (!database.matches("gymrovia_payment_test_[0-9a-f]{32}")) throw new SQLException("Unexpected test schema");
-                statement.execute("DROP DATABASE " + database);
+        var ds =
+                new DriverManagerDataSource(
+                        url,
+                        username,
+                        password
+                );
+
+        var jdbc =
+                new JdbcTemplate(ds);
+
+        seed(jdbc);
+
+        assertThrows(
+                org.springframework.dao.DataAccessException.class,
+                () -> jdbc.update(
+                        "UPDATE payment_orders "
+                                + "SET status='APPROVAL_UNKNOWN' "
+                                + "WHERE id=1"
+                )
+        );
+
+        var flyway =
+                Flyway.configure()
+                        .dataSource(ds)
+                        .load();
+
+        assertEquals(
+                1,
+                flyway.migrate().migrationsExecuted
+        );
+
+        assertEquals(
+                "3",
+                flyway.info()
+                        .current()
+                        .getVersion()
+                        .getVersion()
+        );
+
+        assertEquals(
+                0,
+                flyway.migrate().migrationsExecuted
+        );
+
+        Configuration configuration =
+                new Configuration(
+                        new Environment(
+                                "test",
+                                new SpringManagedTransactionFactory(),
+                                ds
+                        )
+                );
+
+        for (String resource : new String[]{
+                "mappers/payment/PaymentOrderMapper.xml",
+                "mappers/payment/PaymentMapper.xml"
+        }) {
+            try (
+                    var input =
+                            getClass()
+                                    .getClassLoader()
+                                    .getResourceAsStream(resource)
+            ) {
+                assertNotNull(input);
+
+                new XMLMapperBuilder(
+                        input,
+                        configuration,
+                        resource,
+                        configuration.getSqlFragments()
+                ).parse();
             }
         }
+
+        var session =
+                new SqlSessionTemplate(
+                        new SqlSessionFactoryBuilder()
+                                .build(configuration)
+                );
+
+        var orders =
+                session.getMapper(
+                        PaymentOrderMapper.class
+                );
+
+        var payments =
+                session.getMapper(
+                        PaymentMapper.class
+                );
+
+        var txManager =
+                new DataSourceTransactionManager(ds);
+
+        var orderService =
+                transactional(
+                        new PaymentOrderTransactionService(
+                                orders,
+                                mock(PaymentService.class)
+                        ),
+                        txManager
+                );
+
+        var refundService =
+                transactional(
+                        new PaymentRefundTransactionService(
+                                payments,
+                                mock(MembershipMapper.class)
+                        ),
+                        txManager
+                );
+
+        orderService.markApprovalUnknown(
+                1L,
+                "TOSS_NETWORK_ERROR",
+                "response lost"
+        );
+
+        assertEquals(
+                "APPROVAL_UNKNOWN",
+                jdbc.queryForObject(
+                        "SELECT status "
+                                + "FROM payment_orders "
+                                + "WHERE id=1",
+                        String.class
+                )
+        );
+
+        assertThrows(
+                BusinessException.class,
+                () -> orderService.markApprovalUnknown(
+                        2L,
+                        "UNKNOWN",
+                        "lost"
+                )
+        );
+
+        assertEquals(
+                "PAID",
+                jdbc.queryForObject(
+                        "SELECT status "
+                                + "FROM payment_orders "
+                                + "WHERE id=2",
+                        String.class
+                )
+        );
+
+        orderService.failApproval(
+                3L,
+                "REJECT_CARD_COMPANY",
+                "rejected"
+        );
+
+        assertEquals(
+                "FAILED",
+                jdbc.queryForObject(
+                        "SELECT status "
+                                + "FROM payment_orders "
+                                + "WHERE id=3",
+                        String.class
+                )
+        );
+
+        refundService.keepPending(
+                1L,
+                "TOSS_NETWORK_ERROR",
+                "response lost"
+        );
+
+        assertTrue(
+                payments.existsPendingRefundByPaymentId(1L)
+        );
+
+        assertEquals(
+                "PENDING",
+                jdbc.queryForObject(
+                        "SELECT status "
+                                + "FROM refunds "
+                                + "WHERE id=1",
+                        String.class
+                )
+        );
+
+        assertEquals(
+                "TOSS_NETWORK_ERROR",
+                jdbc.queryForObject(
+                        "SELECT failure_code "
+                                + "FROM refunds "
+                                + "WHERE id=1",
+                        String.class
+                )
+        );
+
+        var blocked =
+                assertThrows(
+                        BusinessException.class,
+                        () -> refundService.prepare(
+                                1L,
+                                new CreateRefundRequest(
+                                        new BigDecimal("10000"),
+                                        "another refund"
+                                ),
+                                2L
+                        )
+                );
+
+        assertEquals(
+                "이미 처리 중인 환불 요청이 있습니다.",
+                blocked.getMessage()
+        );
+
+        assertEquals(
+                1,
+                jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM refunds",
+                        Integer.class
+                )
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> new TransactionTemplate(
+                        txManager
+                ).executeWithoutResult(transactionStatus -> {
+                    orderService.markApprovalUnknown(
+                            4L,
+                            "UNKNOWN",
+                            "lost"
+                    );
+
+                    refundService.keepPending(
+                            1L,
+                            "ROLLBACK_MARKER",
+                            "rollback"
+                    );
+
+                    throw new IllegalStateException(
+                            "simulate later DB failure"
+                    );
+                })
+        );
+
+        assertEquals(
+                "APPROVING",
+                jdbc.queryForObject(
+                        "SELECT status "
+                                + "FROM payment_orders "
+                                + "WHERE id=4",
+                        String.class
+                )
+        );
+
+        assertEquals(
+                "TOSS_NETWORK_ERROR",
+                jdbc.queryForObject(
+                        "SELECT failure_code "
+                                + "FROM refunds "
+                                + "WHERE id=1",
+                        String.class
+                )
+        );
     }
 
     private static <T> T transactional(T target, DataSourceTransactionManager manager) {
